@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx"
+  },
+  "eslint.options": {
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-param-reassign": "off",
+    "@typescript-eslint/no-console": "off",
+    "@typescript-eslint/jsx-props-no-spreading": "off",
+    "@typescript-eslint/no-array-index-key": "off",
+    "@typescript-eslint/lines-between-class-members": "off",
+    "@typescript-eslint/no-nested-ternary": "off"
+  },
+  "include": ["src"]
+}
