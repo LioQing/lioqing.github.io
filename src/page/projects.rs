@@ -54,10 +54,10 @@ const PROJECTS: &[Project] = &[
         },
         subtitle: "3D Gaussian Splatting Viewer made in WGPU",
         description: "\
-            This is a project I did for my work as a student research assistant at Innovation \
-            Wing of the University of Hong Kong. It is built with WGPU, a Rust library for \
-            WebGPU, and is used to visualize and edit 3D Gaussian Splatting - a cutting edge 3D \
-            reconstruction technique.\
+            I made this viewer for my work as a student research assistant at Innovation Wing of \
+            the University of Hong Kong. It is built with WGPU, a Rust library for WebGPU, and is \
+            used to visualize and edit 3D Gaussian Splatting - a cutting edge 3D reconstruction \
+            technique.\
         ",
         image_url: Some("wgpu-3dgs-viewer-app.png"),
         links: &[
@@ -233,7 +233,7 @@ const PROJECTS: &[Project] = &[
             experience learning Rust, as well as solidifying my knowledge in floating point \
             numbers.\
         ",
-        image_url: Some("personal-website.png"),
+        image_url: Some("custom-float-calculator.png"),
         links: &[
             (
                 "GitHub",
