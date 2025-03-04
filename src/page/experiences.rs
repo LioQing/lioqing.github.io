@@ -130,7 +130,7 @@ const EXPERIENCES: &[Experience] = &[
         8,
     },
     experience! {
-        "University Student",
+        "University Undergraduate Student",
         "University of Hong Kong Bachelor of Science in Computer Science",
         Education,
         2021,
@@ -166,7 +166,7 @@ const EXPERIENCES: &[Experience] = &[
         7,
     },
     experience! {
-        "Secondary School Student",
+        "IGCSE Spanish Student",
         "St. Paul's College joint with HKU School of Modern Languages and Cultures",
         Education,
         2015,
@@ -175,7 +175,7 @@ const EXPERIENCES: &[Experience] = &[
         6,
     },
     experience! {
-        "Secondary School Student",
+        "DSE Secondary School Student",
         "St. Paul's College",
         Education,
         2015,
