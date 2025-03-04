@@ -1,0 +1,11 @@
+{
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+        100
+    ],
+    "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
+    "rust-analyzer.cargo.features": "all",
+    "[html]": {
+        "editor.indentSize": 2,
+    }
+}
