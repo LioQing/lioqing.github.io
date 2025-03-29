@@ -25,13 +25,13 @@ fn main() {
         Ok(())
     }
 
-    fs::create_dir_all(TO_PATH).expect("Failed to create destination directory");
+    fs::create_dir_all(TO_PATH).expect("create destination directory");
 
     for entry in WalkDir::new(FROM_PATH) {
         let entry = match entry {
             Ok(entry) => entry,
             Err(e) => {
-                eprintln!("Error accessing entry: {}", e);
+                eprintln!("Error accessing entry: {e}");
                 continue;
             }
         };
@@ -39,13 +39,13 @@ fn main() {
         if entry.file_type().is_dir() {
             let rel_path = entry.path().strip_prefix(FROM_PATH).unwrap();
             let dest_path = Path::new(TO_PATH).join(rel_path);
-            fs::create_dir_all(&dest_path).expect("Failed to create subdirectory");
+            fs::create_dir_all(&dest_path).expect("create subdirectory");
             continue;
         }
 
         if let Some(file_name) = entry.file_name().to_str() {
             if EXCLUDE_FILES.contains(&file_name) {
-                println!("Skipping excluded file: {}", file_name);
+                println!("Skipping excluded file: {file_name}");
                 continue;
             }
         }
@@ -54,19 +54,19 @@ fn main() {
         let dest_path = Path::new(TO_PATH).join(rel_path);
 
         if let Some(parent) = dest_path.parent() {
-            fs::create_dir_all(parent).expect("Failed to create parent directory");
+            fs::create_dir_all(parent).expect("create parent directory");
         }
 
         let needs_resize = entry.path().to_string_lossy().contains(PROJECT_COVERS);
 
         if needs_resize {
             match resize_and_save_image(entry.path(), &dest_path) {
-                Ok(_) => println!("Resized and saved: {:?}", dest_path),
+                Ok(_) => println!("Resized and saved: {dest_path:?}"),
                 Err(e) => eprintln!("Error processing image {:?}: {}", entry.path(), e),
             }
         } else {
             match fs::copy(entry.path(), &dest_path) {
-                Ok(_) => println!("Copied: {:?}", dest_path),
+                Ok(_) => println!("Copied: {dest_path:?}"),
                 Err(e) => eprintln!("Error copying {:?}: {}", entry.path(), e),
             }
         }

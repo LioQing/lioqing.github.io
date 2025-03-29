@@ -48,7 +48,7 @@ fn frag_main(in: FragmentInput) -> @location(0) vec4<f32> {
 
     // Logo
     const max_amp = 4.0;
-    const padding = 16; // 32 * 2 * resolution_scale = 32 * 2 * 0.25
+    const padding = 16u; // 32 * 2 * resolution_scale = 32 * 2 * 0.25
     let right_half_start = tex_dims.x / 2;
     let logo_size = min(tex_dims.x / 2 - 2 * padding, tex_dims.y - 2 * padding);
     let logo_pos = vec2<u32>(

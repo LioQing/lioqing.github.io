@@ -48,13 +48,6 @@ struct Experience {
 
 const EXPERIENCES: &[Experience] = &[
     experience! {
-        "Simple Reinforcement Learning Driver Workshop Instructor",
-        "St. Paul's College",
-        ProfessionalWork,
-        2025,
-        3,
-    },
-    experience! {
         "AI Student Research Assistant",
         "University of Hong Kong Innovation Wing AI Team",
         ProfessionalWork,
@@ -67,6 +60,15 @@ const EXPERIENCES: &[Experience] = &[
         CommunityService,
         2024,
         10,
+    },
+    experience! {
+        "Simple Reinforcement Learning Driver Workshop Instructor",
+        "St. Paul's College",
+        ContractWork,
+        2025,
+        2,
+        2025,
+        3,
     },
     experience! {
         "Software Engineer Intern",
@@ -103,16 +105,16 @@ const EXPERIENCES: &[Experience] = &[
         8,
     },
     experience! {
-        "Data Structure & Algorithm Workshop Tutor",
+        "Programming Team Tutor",
         "St. Paul's College",
-        ProfessionalWork,
+        ContractWork,
         2023,
         3,
         2023,
         4,
     },
     experience! {
-        "Student Tutor Assistant",
+        "Student Teaching Assistant",
         "University of Hong Kong Computer Science Department",
         CommunityService,
         2022,
@@ -157,15 +159,6 @@ const EXPERIENCES: &[Experience] = &[
         7,
     },
     experience! {
-        "Gao Hu Member",
-        "Hong Kong Young Chinese Orchestra",
-        CommunityService,
-        2017,
-        7,
-        2021,
-        7,
-    },
-    experience! {
         "IGCSE Spanish Student",
         "St. Paul's College joint with HKU School of Modern Languages and Cultures",
         Education,
@@ -175,7 +168,7 @@ const EXPERIENCES: &[Experience] = &[
         6,
     },
     experience! {
-        "DSE Secondary School Student",
+        "HKDSE Secondary School Student",
         "St. Paul's College",
         Education,
         2015,
@@ -188,6 +181,7 @@ const EXPERIENCES: &[Experience] = &[
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 enum Type {
     ProfessionalWork,
+    ContractWork,
     CommunityService,
     Education,
 }
@@ -196,6 +190,7 @@ impl Type {
     pub const fn name(self) -> &'static str {
         match self {
             Type::ProfessionalWork => "Professional Work",
+            Type::ContractWork => "Contract Work",
             Type::CommunityService => "Community Service",
             Type::Education => "Education",
         }
@@ -204,6 +199,7 @@ impl Type {
     pub const fn icon(self) -> &'static str {
         match self {
             Type::ProfessionalWork => "ph-briefcase",
+            Type::ContractWork => "ph-file-text",
             Type::CommunityService => "ph-users-three",
             Type::Education => "ph-graduation-cap",
         }
