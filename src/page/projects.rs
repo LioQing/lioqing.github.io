@@ -117,13 +117,7 @@ const PROJECTS: &[Project] = &[
     },
     Project {
         title: "Chat Conductor",
-        tags: tags!(
-            FEATURED,
-            PYTHON,
-            TYPESCRIPT,
-            WEB_APP,
-            ARTIFICIAL_INTELLIGENCE
-        ),
+        tags: tags!(PYTHON, TYPESCRIPT, WEB_APP, ARTIFICIAL_INTELLIGENCE),
         time: ProjectTime {
             year: 2023,
             month: Month::December,
@@ -222,7 +216,7 @@ const PROJECTS: &[Project] = &[
     },
     Project {
         title: "Custom Float Calculator",
-        tags: tags!(FEATURED, RUST, WEB_APP, WEB_ASSEMBLY),
+        tags: tags!(RUST, WEB_APP, WEB_ASSEMBLY),
         time: ProjectTime {
             year: 2022,
             month: Month::June,

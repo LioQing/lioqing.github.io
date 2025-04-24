@@ -8,6 +8,7 @@ mod page;
 pub use app::{App, AppProps};
 
 mod state;
+pub use state::*;
 
 mod background;
-pub use background::background;
+pub use background::*;
