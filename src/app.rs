@@ -132,7 +132,7 @@ pub fn App() -> impl IntoView {
                 ")
             }
         />
-        <BackgroundVideo/>
+        <BackgroundImage/>
     }
 }
 
@@ -384,19 +384,8 @@ fn ThemeToggle(target_theme: Theme) -> impl IntoView {
 }
 
 #[component]
-fn BackgroundVideo() -> impl IntoView {
-    let video_ref = NodeRef::<leptos::html::Video>::new();
+fn BackgroundImage() -> impl IntoView {
     let (theme, _) = use_theme();
-
-    Effect::watch(
-        move || theme.get(),
-        move |_, _, _| {
-            if let Some(video) = video_ref.get() {
-                video.load();
-            }
-        },
-        false,
-    );
 
     view! {
         <div style=move || {
@@ -412,28 +401,14 @@ fn BackgroundVideo() -> impl IntoView {
                 transition: {DEFAULT_TRANSITION}; \
             ")
         }>
-            <video
-                node_ref=video_ref
-                autoplay=true
-                muted=true
-                loop
-                style="\
-                    position: fixed; \
-                    right: 0; \
-                    bottom: 0; \
-                    width: 100vw; \
-                    height: 100vh; \
-                    object-fit: cover; \
-                "
-            >
-                <source
-                    src=move || match theme.get() {
-                        Theme::Light => "/assets/videos/background-light.mp4",
-                        Theme::Dark => "/assets/videos/background-dark.mp4",
-                    }
-                    type="video/mp4"
-                />
-            </video>
+            <img
+                src=move || match theme.get() {
+                    Theme::Light => "/assets/images/background-light.png",
+                    Theme::Dark => "/assets/images/background-dark.png",
+                }
+                alt="background"
+                style="width: 100%; height: 100%; object-fit: cover; object-position: right;"
+            />
         </div>
     }
 }
