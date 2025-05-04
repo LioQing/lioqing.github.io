@@ -6,6 +6,10 @@ mod consts;
 mod page;
 #[cfg(target_arch = "wasm32")]
 pub use app::{App, AppProps};
+#[cfg(target_arch = "wasm32")]
+mod query_signal;
+#[cfg(target_arch = "wasm32")]
+pub use query_signal::*;
 
 mod state;
 pub use state::*;

@@ -8,7 +8,7 @@ pub fn Skills() -> impl IntoView {
         <Content
             icon="ph-toolbox"
             title="Skills"
-            subtitle="My passion and career as a software engineer."
+            subtitle="Knowledge I've obtained over the years."
         >
             <Section title="Programming Languages."/>
             <Items
@@ -22,14 +22,14 @@ pub fn Skills() -> impl IntoView {
                 name="Python"
                 icon="python-plain"
                 tags=Tags::PYTHON
-                description="The popular kid in school, so obviously I used it a lot."
+                description="The popular one, so obviously I used it a lot."
             />
             <Spacer/>
             <Items
                 name="C++"
                 icon="cplusplus-plain"
                 tags=Tags::CPLUSPLUS
-                description="The good old friend, the first one I learnt from my high school, but we don't talk much now."
+                description="The first one I learnt from my high school, but not used much now."
             />
             <Spacer/>
             <Items
@@ -43,7 +43,7 @@ pub fn Skills() -> impl IntoView {
                 name="TypeScript"
                 icon="typescript-plain"
                 tags=Tags::TYPESCRIPT
-                description="I followed it through my web journey, even though I am not too into front-end."
+                description="Used a lot for developing websites, even though I am not too into front-end."
             />
             <Section title="Computer Softwares."/>
             <Items
@@ -64,7 +64,7 @@ pub fn Skills() -> impl IntoView {
                 name="Blender"
                 icon="blender-original"
                 tags=Tags::BLENDER
-                description="Tried learning many times, still can't make a gorgeous scene that I want."
+                description="Tried learning many times, still can't make beautiful renders like those online."
             />
         </Content>
     }
