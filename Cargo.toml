@@ -13,29 +13,29 @@ name = "copy-image-assets"
 path = "src/bin/copy_image_assets.rs"
 
 [dependencies]
-bytemuck = "1.21.0"
-chrono = "0.4.39"
-image = { version = "0.25.5", default-features = false, features = ["png"] }
-itertools = "0.14.0"
-log = "0.4.26"
-serde = { version = "1.0.218", features = ["derive"] }
-wgpu = "24.0.1"
-winit = "0.30.9"
+bytemuck = "1.21"
+chrono = "0.4"
+image = { version = "0.25", default-features = false, features = ["png"] }
+itertools = "0.14"
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+wgpu = { version = "25.0", features = ["webgl"] }
+winit = "0.30"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-bitflags = { version = "2.8.0", features = ["serde"] }
-codee = { version = "0.2.0", features = ["json_serde_wasm", "json_serde"] }
-console_error_panic_hook = "0.1.7"
-console_log = { version = "1.0.0", features = ["color"] }
+bitflags = { version = "2.9", features = ["serde"] }
+codee = { version = "0.3", features = ["json_serde_wasm", "json_serde"] }
+console_error_panic_hook = "0.1"
+console_log = { version = "1.0", features = ["color"] }
 fuzzy-matcher = "0.3.7"
-leptos = { version = "0.7.7", features = ["csr"] }
-leptos-use = "0.15.6"
-leptos_router = "0.7.7"
-wasm-bindgen = "0.2.100"
-wasm-bindgen-futures = "0.4.50"
-web-sys = "0.3.77"
+leptos = { version = "0.7", features = ["csr"] }
+leptos-use = "0.15"
+leptos_router = "0.7"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = "0.3"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-env_logger = "0.11.6"
-futures = "0.3.31"
-walkdir = "2.5.0"
+env_logger = "0.11"
+futures = "0.3"
+walkdir = "2.5"
