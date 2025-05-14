@@ -402,16 +402,18 @@ impl Runner {
             .surface
             .get_current_texture()
             .expect("current texture");
-        let view = texture.texture.create_view(&wgpu::TextureViewDescriptor {
-            format: Some(self.gpu.config.view_formats[0]),
-            ..Default::default()
-        });
+        let view = texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
 
         self.postprocessor
             .render(&mut encoder, &view, self.wave.curr_wave);
 
         self.gpu.queue.submit(std::iter::once(encoder.finish()));
-        self.gpu.device.poll(wgpu::Maintain::Wait);
+        self.gpu
+            .device
+            .poll(wgpu::PollType::Wait)
+            .expect("wait device");
         texture.present();
 
         true
@@ -431,10 +433,7 @@ impl Gpu {
         let size = window.inner_size();
 
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: match cfg!(target_arch = "wasm32") {
-                true => wgpu::Backends::GL,
-                false => wgpu::Backends::PRIMARY,
-            },
+            backends: wgpu::Backends::all(),
             ..Default::default()
         });
 
@@ -450,15 +449,13 @@ impl Gpu {
             .expect("request adapter");
 
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: Some("Device"),
-                    required_features: wgpu::Features::empty() | wgpu::Features::FLOAT32_FILTERABLE,
-                    required_limits: adapter.limits(),
-                    memory_hints: wgpu::MemoryHints::default(),
-                },
-                None,
-            )
+            .request_device(&wgpu::DeviceDescriptor {
+                label: Some("Device"),
+                required_features: wgpu::Features::empty() | wgpu::Features::FLOAT32_FILTERABLE,
+                required_limits: adapter.limits(),
+                memory_hints: wgpu::MemoryHints::default(),
+                trace: wgpu::Trace::Off,
+            })
             .await
             .expect("request device");
 
@@ -476,7 +473,7 @@ impl Gpu {
             height: size.height.max(1),
             present_mode: surface_caps.present_modes[0],
             alpha_mode: surface_caps.alpha_modes[0],
-            view_formats: vec![surface_format.remove_srgb_suffix()],
+            view_formats: vec![surface_format],
             desired_maximum_frame_latency: 2,
         };
 
@@ -1019,7 +1016,7 @@ impl NoiseTexture {
         }
 
         queue.submit(std::iter::once(encoder.finish()));
-        device.poll(wgpu::Maintain::Wait);
+        device.poll(wgpu::PollType::Wait).expect("wait device");
     }
 }
 
