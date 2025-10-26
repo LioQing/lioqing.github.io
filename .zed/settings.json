@@ -1,0 +1,17 @@
+{
+    "lsp": {
+        "rust-analyzer": {
+            "initialization_options": {
+                "cargo": {
+                    "target": "wasm32-unknown-unknown"
+                },
+                "check": {
+                    "command": "clippy"
+                }
+            }
+        }
+    },
+    "file_types": {
+        "Wgsl": ["*.wesl"]
+    }
+}

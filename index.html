@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+  <head>
+    <title>Lio Qing</title>
+
+    <link data-trunk rel="rust" />
+
+    <base data-trunk-public-url />
+
+    <link data-trunk rel="icon" href="assets/favicon.ico" />
+
+    <link data-trunk rel="copy-file" href="assets/sw.js" />
+    <link data-trunk rel="copy-file" href="assets/register_sw.js" />
+    <link data-trunk rel="copy-file" href="assets/manifest.json" />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/icon-1024.png"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/icon-256.png"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/icon_ios_touch_192.png"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/maskable_icon_x512.png"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/lioqing.png"
+      data-target-path="assets"
+    />
+
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="assets/icon_ios_touch_192.png" />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="efefef"
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#1c1c1c"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        background: #1c1c1c;
+        color: #efefef;
+        font-family: "Open Sans", sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 400;
+        font-style: normal;
+        font-variation-settings: "wdth" 100;
+      }
+
+      canvas {
+        margin-right: auto;
+        margin-left: auto;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="background" style="position: fixed; top: 0; left: 0"></canvas>
+
+    <script src="register_sw.js"></script>
+
+    <main
+      style="
+        position: relative;
+        z-index: 1;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        min-height: 300vh;
+      "
+    >
+      <h1>Welcome to My Portfolio</h1>
+      <p>
+        This is an example portfolio page showcasing various sections and
+        content.
+      </p>
+
+      <section>
+        <h2>About Me</h2>
+        <p>
+          I'm a passionate developer with expertise in web technologies and
+          creative coding. I love building interactive experiences and exploring
+          new technologies.
+        </p>
+        <p>
+          With years of experience in software development, I've worked on
+          numerous projects ranging from small websites to large-scale
+          applications.
+        </p>
+      </section>
+
+      <section id="skills">
+        <h2>Skills & Expertise</h2>
+        <h3>Frontend Development</h3>
+        <p>
+          Proficient in HTML, CSS, JavaScript, and modern frameworks. I create
+          responsive, accessible, and performant web applications.
+        </p>
+
+        <h3>Backend Development</h3>
+        <p>
+          Experienced with server-side technologies, databases, and API design.
+          I build scalable and maintainable backend systems.
+        </p>
+
+        <h3>Creative Coding</h3>
+        <p>
+          Passionate about generative art, interactive visualizations, and
+          creative use of web technologies like Canvas and WebGL.
+        </p>
+      </section>
+
+      <section>
+        <h2>Recent Projects</h2>
+        <h3>Project Alpha</h3>
+        <p>
+          A cutting-edge web application that revolutionizes user interaction
+          through innovative design patterns and smooth animations.
+        </p>
+
+        <h3>Project Beta</h3>
+        <p>
+          An open-source library that helps developers create beautiful,
+          interactive data visualizations with minimal code.
+        </p>
+
+        <h3>Project Gamma</h3>
+        <p>
+          A progressive web app featuring offline capabilities, push
+          notifications, and a seamless user experience across all devices.
+        </p>
+      </section>
+
+      <section>
+        <h2>Experience</h2>
+        <h3>Senior Developer - Tech Corp (2020-Present)</h3>
+        <p>
+          Leading frontend development initiatives and mentoring junior
+          developers. Architected and implemented multiple high-traffic web
+          applications.
+        </p>
+
+        <h3>Full Stack Developer - Startup Inc (2018-2020)</h3>
+        <p>
+          Developed end-to-end solutions for various client projects. Worked
+          with cross-functional teams to deliver quality software on tight
+          deadlines.
+        </p>
+
+        <h3>Junior Developer - Digital Agency (2016-2018)</h3>
+        <p>
+          Built responsive websites and web applications for diverse clients.
+          Gained experience in modern web development practices and tools.
+        </p>
+      </section>
+
+      <section>
+        <h2>Education & Certifications</h2>
+        <h3>Computer Science Degree</h3>
+        <p>
+          Graduated with honors from a leading university. Specialized in
+          software engineering and human-computer interaction.
+        </p>
+
+        <h3>Professional Certifications</h3>
+        <p>
+          Certified in various technologies including cloud platforms, security
+          best practices, and advanced JavaScript frameworks.
+        </p>
+      </section>
+
+      <section>
+        <h2>Blog & Articles</h2>
+        <h3>Understanding Modern Web Performance</h3>
+        <p>
+          An in-depth guide to optimizing web applications for speed and
+          efficiency. Covers topics like lazy loading, code splitting, and
+          caching strategies.
+        </p>
+
+        <h3>The Art of Responsive Design</h3>
+        <p>
+          Exploring techniques for creating beautiful layouts that work
+          seamlessly across all device sizes and orientations.
+        </p>
+
+        <h3>Building Progressive Web Apps</h3>
+        <p>
+          A comprehensive tutorial series on creating PWAs with offline support,
+          push notifications, and native-like experiences.
+        </p>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p>
+          Interested in collaborating or have a project in mind? Feel free to
+          reach out!
+        </p>
+        <p>
+          I'm always open to discussing new opportunities and interesting
+          challenges.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
