@@ -41,7 +41,43 @@
     <link
       data-trunk
       rel="copy-file"
-      href="assets/lioqing.png"
+      href="assets/Lio Font.ttf"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/TTD_Lockup_BlueSky.svg"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/University_of_Hong_Kong-Logo.svg"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/Flag_of_Hong_Kong.svg"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/github-mark.svg"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/github-mark-white.svg"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/LI-In-Bug.png"
       data-target-path="assets"
     />
 
@@ -66,14 +102,65 @@
     />
 
     <style>
+      @font-face {
+        font-family: "Lio Font";
+        src: url("assets/Lio Font.ttf") format("truetype");
+      }
+
+      main {
+        position: relative;
+        margin: 0 auto;
+        padding: 0 32px;
+        min-height: 300vh;
+      }
+
       body {
-        background: #1c1c1c;
-        color: #efefef;
+        background: var(--background);
+        color: var(--foreground);
         font-family: "Open Sans", sans-serif;
+        font-size: 18px;
         font-optical-sizing: auto;
         font-weight: 400;
         font-style: normal;
         font-variation-settings: "wdth" 100;
+      }
+
+      h1 {
+        font-family: "Lio Font", sans-serif;
+        font-size: 4em;
+        margin: 0;
+        letter-spacing: 2px;
+      }
+
+      h2 {
+        font-family: "Lio Font", sans-serif;
+        font-weight: 400;
+        font-size: 4em;
+        margin: 0;
+      }
+
+      h3 {
+        font-family: "Open Sans", sans-serif;
+        font-size: 2em;
+        font-weight: 100;
+        margin: 0;
+      }
+
+      p {
+        font-family: "Open Sans", sans-serif;
+        font-size: 1em;
+        font-weight: 100;
+        margin: 0;
+      }
+
+      a {
+        color: var(--foreground);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      a:hover {
+        text-decoration: underline;
       }
 
       canvas {
@@ -86,6 +173,197 @@
         width: 100%;
         height: 100%;
       }
+
+      .name {
+        display: inline-block;
+        text-align: center;
+      }
+
+      .name span {
+        display: inline-block;
+        font-size: 25vw;
+      }
+
+      .title {
+        margin-top: -1em;
+        margin-left: 1em;
+      }
+
+      .title span {
+        display: inline-block;
+      }
+
+      .panel {
+        background: var(--panel-background);
+        border-radius: 36px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      .about-me {
+        max-width: 500px;
+        min-width: 300px;
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 1 / 1;
+      }
+
+      .about-me-content {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        align-items: center;
+        justify-content: center;
+        height: calc(100% - 32px - 32px);
+        padding: 24px 36px;
+      }
+
+      .about-me-profile {
+        width: calc(100% - 12em);
+        aspect-ratio: 1 / 1;
+      }
+
+      .about-me-profile > div {
+        aspect-ratio: 1 / 1;
+        transition: transform 0.2s ease-in-out;
+      }
+
+      .about-me-profile > div:hover {
+        transform-origin: center;
+        transform: scale(1.05);
+        transition: transform 0.2s ease-in-out;
+      }
+
+      .about-me-profile > div:active {
+        transform-origin: center;
+        transform: scale(0.95);
+        transition: transform 0.1s ease-in-out;
+      }
+
+      .about-me-profile-content {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        align-items: center;
+        justify-content: center;
+        height: calc(100% - 24px - 24px);
+        padding: 24px;
+      }
+
+      .about-me h3 {
+        width: 100%;
+      }
+
+      .tilting-container {
+        perspective: 1000px;
+      }
+
+      .tilting {
+        transform-style: preserve-3d;
+      }
+
+      .section-header {
+        margin-bottom: 36px;
+      }
+
+      .section-header > h2 {
+        text-align: center;
+      }
+
+      .section-header > p {
+        text-align: center;
+      }
+
+      .experiences-filter {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: fit-content;
+        padding: 24px;
+      }
+
+      .experiences-filter > p {
+        margin-left: 12px;
+      }
+
+      .experiences-filter-options {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .experiences-filter-button {
+        padding: 12px 24px;
+        border-radius: 16px;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .experiences-filter-button:hover {
+        transform-origin: center;
+        transform: scale(1.05);
+        transition: transform 0.2s ease-in-out;
+      }
+
+      .experiences-filter-button:active {
+        transform-origin: center;
+        transform: scale(0.95);
+        transition: transform 0.1s ease-in-out;
+      }
+
+      /* Loading */
+
+      #loading-cover {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1em;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(28, 28, 28, 1);
+      }
+
+      #loading-cover h3 {
+        color: rgba(222, 222, 222, 1);
+      }
+
+      .loading-ring {
+        display: inline-block;
+        width: 48px;
+        height: 48px;
+        position: relative;
+        left: -8px;
+      }
+
+      .loading-ring:after {
+        content: " ";
+        display: block;
+        width: 48px;
+        height: 48px;
+        margin: 0;
+        border-radius: 50%;
+        border: 6px solid rgba(222, 222, 222, 1);
+        border-color: rgba(222, 222, 222, 1) rgba(222, 222, 222, 1) transparent
+          transparent;
+        animation: loading-ring 1.2s linear infinite;
+      }
+
+      @keyframes loading-ring {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
 
@@ -94,149 +372,242 @@
 
     <script src="register_sw.js"></script>
 
-    <main
-      style="
-        position: relative;
-        z-index: 1;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 2rem;
-        min-height: 300vh;
-      "
-    >
-      <h1>Welcome to My Portfolio</h1>
-      <p>
-        This is an example portfolio page showcasing various sections and
-        content.
-      </p>
+    <main>
+      <div
+        style="
+          height: 100vh;
+          display: flex;
+          flex-direction: column-reverse;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+        "
+      >
+        <p
+          id="scroll-down-indicator"
+          style="
+            width: 100%;
+            text-align: center;
+            font-size: 0.6em;
+            color: #6666;
+          "
+        >
+          Scroll down to learn more about me
+        </p>
+      </div>
+      <div
+        style="
+          height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        "
+      >
+        <div style="width: fit-content">
+          <div style="text-align: center">
+            <h1 class="name">
+              <span id="first-name">Lio&nbsp;</span
+              ><span id="last-name">Qing</span>
+            </h1>
+          </div>
+          <h3 class="title">
+            <span id="software-title">Software&nbsp;</span
+            ><span id="engineer-title">Engineer</span>
+          </h3>
+        </div>
+      </div>
 
-      <section>
-        <h2>About Me</h2>
-        <p>
-          I'm a passionate developer with expertise in web technologies and
-          creative coding. I love building interactive experiences and exploring
-          new technologies.
-        </p>
-        <p>
-          With years of experience in software development, I've worked on
-          numerous projects ranging from small websites to large-scale
-          applications.
-        </p>
+      <section style="margin-top: 2em">
+        <div style="display: flex; flex-direction: column; gap: 48px">
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+              gap: 48px;
+              justify-content: center;
+              align-items: center;
+            "
+          >
+            <div class="panel tilting-container about-me">
+              <div class="tilting about-me-content">
+                <h3>
+                  I am from
+                  <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href="https://en.wikipedia.org/wiki/Hong_Kong"
+                    style="color: var(--hk)"
+                    >Hong Kong</a
+                  >.
+                </h3>
+                <img
+                  src="assets/Flag_of_Hong_Kong.svg"
+                  alt="Flag of Hong Kong"
+                  class="about-me-logo"
+                  style="width: auto; height: 48px"
+                />
+              </div>
+            </div>
+            <div class="panel tilting-container about-me">
+              <div class="tilting about-me-content">
+                <h3>
+                  I work as a Software Engineer at
+                  <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href="https://www.thetradedesk.com/"
+                    style="color: var(--ttd)"
+                    >The Trade Desk</a
+                  >.
+                </h3>
+                <img
+                  src="assets/TTD_Lockup_BlueSky.svg"
+                  alt="The Trade Desk Logo"
+                  class="about-me-logo"
+                  style="width: auto; height: 48px"
+                />
+              </div>
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+              gap: 48px;
+              justify-content: center;
+              align-items: center;
+            "
+          >
+            <div class="panel tilting-container about-me">
+              <div class="tilting about-me-content">
+                <h3>
+                  I graduated with BEng(CompSc) from
+                  <a
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href="https://www.thetradedesk.com/"
+                    style="color: var(--hku)"
+                    >The University of Hong Kong</a
+                  >.
+                </h3>
+                <img
+                  src="assets/University_of_Hong_Kong-Logo.svg"
+                  alt="The University of Hong Kong Logo"
+                  class="about-me-logo"
+                  style="width: auto; height: 48px"
+                />
+              </div>
+            </div>
+            <div class="about-me">
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 36px;
+                  height: 100%;
+                "
+              >
+                <div
+                  class="panel tilting-container"
+                  style="width: 100%; height: calc(50% - 0.75em)"
+                >
+                  <div class="tilting about-me-content">
+                    <h3>Connect with me on my other social profiles!</h3>
+                  </div>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: row;
+                    gap: 36px;
+                    height: calc(50% - 0.75em);
+                  "
+                >
+                  <div class="about-me-profile">
+                    <div class="panel tilting-container">
+                      <a
+                        href="https://www.linkedin.com/in/lioqyz/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="width: 100%"
+                      >
+                        <div class="tilting about-me-profile-content">
+                          <img
+                            src="assets/LI-In-Bug.png"
+                            alt="LinkedIn Logo"
+                            class="about-me-logo"
+                            style="width: auto; height: 48px"
+                          />
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                  <div class="about-me-profile">
+                    <div class="panel tilting-container">
+                      <a
+                        href="https://github.com/lioqing/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style="width: 100%"
+                      >
+                        <div class="tilting about-me-profile-content">
+                          <img
+                            src="assets/github-mark-white.svg"
+                            alt="GitHub Logo"
+                            class="about-me-logo"
+                            style="width: auto; height: 48px"
+                          />
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section id="skills">
-        <h2>Skills & Expertise</h2>
-        <h3>Frontend Development</h3>
-        <p>
-          Proficient in HTML, CSS, JavaScript, and modern frameworks. I create
-          responsive, accessible, and performant web applications.
-        </p>
-
-        <h3>Backend Development</h3>
-        <p>
-          Experienced with server-side technologies, databases, and API design.
-          I build scalable and maintainable backend systems.
-        </p>
-
-        <h3>Creative Coding</h3>
-        <p>
-          Passionate about generative art, interactive visualizations, and
-          creative use of web technologies like Canvas and WebGL.
-        </p>
+      <section style="margin-top: 20vh">
+        <div class="section-header">
+          <h2>Experiences</h2>
+          <p>My education and professional experiences.</p>
+        </div>
+        <div style="display: flex; justify-content: center">
+          <div class="panel experiences-filter">
+            <p>Filter by:</p>
+            <div class="experiences-filter-options">
+              <div
+                id="experiences-education-filter"
+                class="experiences-filter-button"
+              >
+                <h3>Education</h3>
+              </div>
+              <div
+                id="experiences-work-filter"
+                class="experiences-filter-button"
+              >
+                <h3>Work</h3>
+              </div>
+              <div
+                id="experiences-others-filter"
+                class="experiences-filter-button"
+              >
+                <h3>Others</h3>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section>
-        <h2>Recent Projects</h2>
-        <h3>Project Alpha</h3>
-        <p>
-          A cutting-edge web application that revolutionizes user interaction
-          through innovative design patterns and smooth animations.
-        </p>
-
-        <h3>Project Beta</h3>
-        <p>
-          An open-source library that helps developers create beautiful,
-          interactive data visualizations with minimal code.
-        </p>
-
-        <h3>Project Gamma</h3>
-        <p>
-          A progressive web app featuring offline capabilities, push
-          notifications, and a seamless user experience across all devices.
-        </p>
-      </section>
-
-      <section>
-        <h2>Experience</h2>
-        <h3>Senior Developer - Tech Corp (2020-Present)</h3>
-        <p>
-          Leading frontend development initiatives and mentoring junior
-          developers. Architected and implemented multiple high-traffic web
-          applications.
-        </p>
-
-        <h3>Full Stack Developer - Startup Inc (2018-2020)</h3>
-        <p>
-          Developed end-to-end solutions for various client projects. Worked
-          with cross-functional teams to deliver quality software on tight
-          deadlines.
-        </p>
-
-        <h3>Junior Developer - Digital Agency (2016-2018)</h3>
-        <p>
-          Built responsive websites and web applications for diverse clients.
-          Gained experience in modern web development practices and tools.
-        </p>
-      </section>
-
-      <section>
-        <h2>Education & Certifications</h2>
-        <h3>Computer Science Degree</h3>
-        <p>
-          Graduated with honors from a leading university. Specialized in
-          software engineering and human-computer interaction.
-        </p>
-
-        <h3>Professional Certifications</h3>
-        <p>
-          Certified in various technologies including cloud platforms, security
-          best practices, and advanced JavaScript frameworks.
-        </p>
-      </section>
-
-      <section>
-        <h2>Blog & Articles</h2>
-        <h3>Understanding Modern Web Performance</h3>
-        <p>
-          An in-depth guide to optimizing web applications for speed and
-          efficiency. Covers topics like lazy loading, code splitting, and
-          caching strategies.
-        </p>
-
-        <h3>The Art of Responsive Design</h3>
-        <p>
-          Exploring techniques for creating beautiful layouts that work
-          seamlessly across all device sizes and orientations.
-        </p>
-
-        <h3>Building Progressive Web Apps</h3>
-        <p>
-          A comprehensive tutorial series on creating PWAs with offline support,
-          push notifications, and native-like experiences.
-        </p>
-      </section>
-
-      <section>
-        <h2>Contact</h2>
-        <p>
-          Interested in collaborating or have a project in mind? Feel free to
-          reach out!
-        </p>
-        <p>
-          I'm always open to discussing new opportunities and interesting
-          challenges.
-        </p>
-      </section>
+      <div id="loading-cover">
+        <noscript>You need javascript to use this website</noscript>
+        <h3>Loading…</h3>
+        <div class="loading-ring"></div>
+      </div>
     </main>
   </body>
 </html>

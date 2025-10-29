@@ -25,6 +25,8 @@ impl Gpu {
             .await
             .expect_throw("adapter available");
 
+        log::debug!("Adapter: {:?}", adapter.get_info());
+
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 required_limits: adapter.limits(),

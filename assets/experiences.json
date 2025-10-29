@@ -1,0 +1,144 @@
+[
+  {
+    "name": "Software Engineer",
+    "organization": "The Trade Desk",
+    "filter": "work",
+    "start_year": 2025,
+    "start_month": 6
+  },
+  {
+    "name": "Student Research Assistant",
+    "organization": "The University of Hong Kong, Innovation Wing AI Team",
+    "filter": "work",
+    "start_year": 2024,
+    "start_month": 10,
+    "end_year": 2025,
+    "end_month": 6
+  },
+  {
+    "name": "Google Developer Group Organizer",
+    "organization": "Google Developer Group on Campus The University of Hong Kong",
+    "filter": "others",
+    "start_year": 2024,
+    "start_month": 10,
+    "end_year": 2025,
+    "end_month": 6
+  },
+  {
+    "name": "Student Ambassador",
+    "organization": "The University of Hong Kong",
+    "filter": "others",
+    "start_year": 2023,
+    "start_month": 10,
+    "end_year": 2025,
+    "end_month": 6
+  },
+  {
+    "name": "Bachelor of Engineering in Computer Science Undergraduate Student",
+    "organization": "The University of Hong Kong",
+    "filter": "education",
+    "start_year": 2021,
+    "start_month": 9,
+    "end_year": 2025,
+    "end_month": 6
+  },
+  {
+    "name": "Simple Reinforcement Learning Driver Workshop Instructor",
+    "organization": "St. Paul's College",
+    "filter": "work",
+    "start_year": 2025,
+    "start_month": 2,
+    "end_year": 2025,
+    "end_month": 3
+  },
+  {
+    "name": "Software Engineer Intern",
+    "organization": "The Trade Desk",
+    "filter": "work",
+    "start_year": 2024,
+    "start_month": 6,
+    "end_year": 2024,
+    "end_month": 9
+  },
+  {
+    "name": "Student Interest Group Leader",
+    "organization": "The University of Hong Kong, Innovation Wing GenNarrator AI Student Interest Group",
+    "filter": "others",
+    "start_year": 2023,
+    "start_month": 12,
+    "end_year": 2024,
+    "end_month": 8
+  },
+  {
+    "name": "Student Teaching Assistant",
+    "organization": "The University of Hong Kong, Computer Science Department",
+    "filter": "work",
+    "start_year": 2022,
+    "start_month": 9,
+    "end_year": 2023,
+    "end_month": 11
+  },
+  {
+    "name": "Data Science Intern",
+    "organization": "Asklora",
+    "filter": "work",
+    "start_year": 2023,
+    "start_month": 6,
+    "end_year": 2023,
+    "end_month": 8
+  },
+  {
+    "name": "Programming Team Tutor",
+    "organization": "St. Paul's College",
+    "filter": "work",
+    "start_year": 2023,
+    "start_month": 3,
+    "end_year": 2023,
+    "end_month": 4
+  },
+  {
+    "name": "IT Strategic Support Intern",
+    "organization": "HKSAR Electrical & Mechanical Service Department",
+    "filter": "work",
+    "start_year": 2022,
+    "start_month": 6,
+    "end_year": 2022,
+    "end_month": 8
+  },
+  {
+    "name": "HKDSE Secondary School Student",
+    "organization": "St. Paul's College",
+    "filter": "education",
+    "start_year": 2015,
+    "start_month": 9,
+    "end_year": 2021,
+    "end_month": 7
+  },
+  {
+    "name": "Biology Society & Computer Society Committee Member",
+    "organization": "St. Paul's College",
+    "filter": "others",
+    "start_year": 2018,
+    "start_month": 9,
+    "end_year": 2021,
+    "end_month": 7
+  },
+  {
+    "name": "Rubik's Cube Club Committee Member",
+    "organization": "St. Paul's College",
+    "filter": "others",
+    "start_year": 2018,
+    "start_month": 9,
+    "end_year": 2019,
+    "end_month": 7
+  },
+  {
+    "name": "International General Certificate of Secondary Education (IGCSE) Spanish Student",
+    "organization": "St. Paul's College joint with HKU School of Modern Languages and Cultures",
+    "filter": "education",
+    "start_year": 2015,
+    "start_month": 9,
+    "end_year": 2019,
+    "end_month": 7
+  }
+]

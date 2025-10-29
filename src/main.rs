@@ -5,26 +5,27 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     background::{Background, BackgroundEvent},
-    ext::CanvasExt as _,
+    ext::{CanvasExt as _, MouseEventExt as _},
     gpu::Gpu,
+    theme::Theme,
 };
 
 mod background;
+mod event_listeners;
 mod ext;
 mod frame;
 mod gpu;
-mod images;
 mod line_segment;
 mod logger;
 mod meta_field;
-mod meta_image;
 mod meta_shape;
 mod mouse;
 mod pipeline;
+mod theme;
 
 #[macro_export]
 macro_rules! add_event_listener {
-    ($target:expr, $event:expr, $closure:expr, as $($trait:tt)+) => {
+    ($target:expr, $event:expr, $closure:expr; $($trait:tt)+) => {
         let closure = wasm_bindgen::prelude::Closure::wrap(Box::new($closure) as Box<dyn $($trait)+>);
         $target
             .add_event_listener_with_callback($event, closure.as_ref().unchecked_ref())
@@ -42,6 +43,8 @@ fn main() {
 
     console_error_panic_hook::set_once();
 
+    event_listeners::init();
+
     let window = web_sys::window().unwrap_throw();
 
     let document = window.document().unwrap_throw();
@@ -52,6 +55,8 @@ fn main() {
         .dyn_into::<web_sys::HtmlCanvasElement>()
         .unwrap_throw();
 
+    Theme::set_current(Theme::Dark);
+
     wasm_bindgen_futures::spawn_local(async move {
         let gpu = Gpu::new(canvas.clone()).await;
 
@@ -60,25 +65,19 @@ fn main() {
         add_event_listener!(window, "mousemove", {
             let tx = tx.clone();
             move |event: web_sys::MouseEvent| {
-                let pos = ivec2(
-                    event.client_x(),
-                    event.client_y(),
-                );
-                if let Err(e) = tx.send(BackgroundEvent::MouseMove(pos)) {
+                if let Err(e) = tx.send(BackgroundEvent::MouseMove(event.client_position())) {
                     log::error!("Failed to send mouse move event: {e}");
                 }
             }
-        }, as FnMut(_));
+        }; FnMut(_));
         add_event_listener!(window, "resize", {
             let tx = tx.clone();
-            let canvas = canvas.clone();
             move || {
-                let size = canvas.size();
-                if let Err(e) = tx.send(BackgroundEvent::Resize(size)) {
+                if let Err(e) = tx.send(BackgroundEvent::Resize) {
                     log::error!("Failed to send resize event: {e}");
                 }
             }
-        }, as FnMut());
+        }; FnMut());
 
         log::debug!("Background initialized");
 
@@ -99,4 +98,10 @@ fn main() {
             .request_animation_frame(update.get().unwrap_throw().as_ref().unchecked_ref())
             .unwrap_throw();
     });
+
+    document
+        .get_element_by_id("loading-cover")
+        .unwrap_throw()
+        .set_attribute("style", "display: none;")
+        .unwrap_throw();
 }

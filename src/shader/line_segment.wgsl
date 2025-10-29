@@ -1,4 +1,4 @@
-const width: f32 = 2.0;
+const width: f32 = 4.0;
 const half_width: f32 = width / 2.0;
 
 struct FrameMetadata {
@@ -64,14 +64,14 @@ fn frag_main(
     let at_end_side = dot(end - start, frag_coord.xy - start) > 0.0;
     let at_start_side = dot(start - end, frag_coord.xy - end) > 0.0;
     if at_end_side && at_start_side {
-        return vec4<f32>(1.0);
+        return vec4<f32>(0.6);
     } else if at_end_side {
         if length(frag_coord.xy - end) <= half_width {
-            return vec4<f32>(1.0);
+            return vec4<f32>(0.6);
         }
     } else if at_start_side {
         if length(frag_coord.xy - start) <= half_width {
-            return vec4<f32>(1.0);
+            return vec4<f32>(0.6);
         }
     }
     

@@ -8,6 +8,7 @@ ahash = { version = "0.8", default-features = false, features = [
     "std",
     "no-rng",
 ] }
+atomic_enum = "0.3"
 bytemuck = "1.24"
 console_error_panic_hook = "0.1"
 glam = { version = "0.30", features = ["bytemuck"] }
@@ -18,8 +19,15 @@ wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = [
     "Window",
+    "Document",
     "MouseEvent",
     "GpuCanvasContext",
+    "StyleSheetList",
+    "CssStyleDeclaration",
+    "HtmlSpanElement",
+    "HtmlCollection",
+    "DomRect",
+    "Element",
     "console",
 ] }
 web-time = "1.1"

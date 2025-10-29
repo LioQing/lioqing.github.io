@@ -6,41 +6,37 @@ use strum::IntoDiscriminant;
 use wasm_bindgen::UnwrapThrowExt as _;
 
 use crate::{
-    ext::{CanvasExt as _, SurfaceConfigurationExt as _, WindowExt},
+    ext::{CanvasExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt},
     frame::FrameMetadata,
     gpu::Gpu,
-    images,
     line_segment::LineSegments,
     meta_field::MetaField,
-    meta_image::MetaImage,
     meta_shape::{MetaBall, MetaBox, MetaLine, MetaShapes},
     mouse::Mouse,
     pipeline::{
-        LineSegmentRenderer, MarchingSquaresProcessor, MetaFieldImageProcessor, MetaFieldProcessor,
-        MetaFieldRenderer,
+        LineSegmentRenderer, MarchingSquaresProcessor, MetaFieldProcessor, MetaFieldRenderer,
     },
+    theme::{Theme, ThemePropertyName},
 };
 
 #[derive(Debug, strum::EnumDiscriminants)]
 #[strum_discriminants(derive(Hash))]
 #[strum_discriminants(name(BackgroundEventType))]
 pub enum BackgroundEvent {
-    Resize(UVec2),
+    Resize,
     MouseMove(IVec2),
 }
 
 #[derive(Debug)]
 pub struct Background {
     gpu: Gpu,
-    events: mpsc::Receiver<BackgroundEvent>,
+    background_events: mpsc::Receiver<BackgroundEvent>,
     meta_field_processor: MetaFieldProcessor,
     meta_field_renderer: MetaFieldRenderer,
-    meta_field_image_processor: MetaFieldImageProcessor,
     marching_squares_processor: MarchingSquaresProcessor,
     line_segment_renderer: LineSegmentRenderer,
     frame_metadata: FrameMetadata,
     meta_shapes: MetaShapes,
-    meta_images: Vec<MetaImage>,
     meta_field: MetaField,
     line_segments: LineSegments,
     frame_timer: web_time::Instant,
@@ -51,34 +47,26 @@ impl Background {
     pub fn new(
         gpu: Gpu,
         canvas: web_sys::HtmlCanvasElement,
-        events: mpsc::Receiver<BackgroundEvent>,
+        background_events: mpsc::Receiver<BackgroundEvent>,
     ) -> Self {
         let frame_metadata = FrameMetadata::new(&gpu.device, canvas.size(), IVec2::ZERO);
 
-        let mut meta_shapes = MetaShapes::new(&gpu.device, 2, 1, 1);
-        meta_shapes.balls_mut()[1] = MetaBall {
-            position: vec2(200.0, 200.0),
-            radius: 75.0,
-        };
-        meta_shapes.lines_mut()[0] = MetaLine {
-            start: vec2(600.0, 100.0),
-            end: vec2(700.0, 400.0),
-            radius: 36.0,
-        };
+        let mut meta_shapes = MetaShapes::new(&gpu.device, 1, 0, 0);
+        // let mut meta_shapes = MetaShapes::new(&gpu.device, 2, 1, 1);
+        // meta_shapes.balls_mut()[1] = MetaBall {
+        //     position: vec2(200.0, 200.0),
+        //     radius: 75.0,
+        // };
+        // meta_shapes.lines_mut()[0] = MetaLine {
+        //     start: vec2(600.0, 100.0),
+        //     end: vec2(700.0, 400.0),
+        //     radius: 36.0,
+        // };
         // meta_shapes.boxes_mut()[0] = MetaBox {
         //     min: vec2(0.0, 1300.0),
         //     max: vec2(800.0, 2100.0),
         //     radius: 48.0,
         // };
-
-        let meta_images = vec![MetaImage::new(
-            &gpu.device,
-            &gpu.queue,
-            vec2(0.0, 1300.0),
-            vec2(800.0, 2100.0),
-            1.0,
-            &image::load_from_memory(images::LIOQING).unwrap_throw(),
-        )];
 
         let meta_field = MetaField::new(&gpu.device, &frame_metadata, 8);
 
@@ -86,8 +74,6 @@ impl Background {
 
         let meta_field_processor =
             MetaFieldProcessor::new(&gpu.device, &frame_metadata, &meta_shapes, &meta_field);
-
-        let meta_field_image_processor = MetaFieldImageProcessor::new(&gpu.device, &meta_field);
 
         let meta_field_renderer =
             MetaFieldRenderer::new(&gpu.device, &meta_field, gpu.config.format);
@@ -108,15 +94,13 @@ impl Background {
 
         Self {
             gpu,
-            events,
+            background_events,
             meta_field_processor,
             meta_field_renderer,
-            meta_field_image_processor,
             marching_squares_processor,
             line_segment_renderer,
             frame_metadata,
             meta_shapes,
-            meta_images,
             meta_field,
             line_segments,
             frame_timer,
@@ -137,20 +121,22 @@ impl Background {
 
     fn handle_event(&mut self) {
         let event_map = self
-            .events
+            .background_events
             .try_iter()
             .map(|event| (event.discriminant(), event))
             .collect::<HashMap<_, _>>();
 
         for event in event_map.into_values() {
             match event {
-                BackgroundEvent::Resize(size) => self.handle_resize(size),
+                BackgroundEvent::Resize => self.handle_resize(),
                 BackgroundEvent::MouseMove(pos) => self.handle_mouse_move(pos),
             }
         }
     }
 
-    fn handle_resize(&mut self, size: UVec2) {
+    fn handle_resize(&mut self) {
+        let window = web_sys::window().expect_throw("window");
+        let size = window.size().as_uvec2();
         self.gpu.config.width = size.x;
         self.gpu.config.height = size.y;
 
@@ -162,6 +148,9 @@ impl Background {
             .surface
             .configure(&self.gpu.device, &self.gpu.config);
         log::debug!("Resized to {size}");
+
+        self.frame_metadata
+            .update(&self.gpu.queue, self.gpu.config.size(), window.scroll_pos());
 
         self.meta_field
             .resize(&self.gpu.device, &self.frame_metadata);
@@ -194,11 +183,10 @@ impl Background {
     }
 
     fn handle_update(&mut self, delta_time: f32) {
-        self.frame_metadata.update(
-            &self.gpu.queue,
-            self.gpu.config.size(),
-            web_sys::window().expect_throw("window").scroll_pos(),
-        );
+        let window = web_sys::window().expect_throw("window");
+
+        self.frame_metadata
+            .update(&self.gpu.queue, self.gpu.config.size(), window.scroll_pos());
 
         self.mouse.update(&self.frame_metadata, delta_time);
 
@@ -233,20 +221,36 @@ impl Background {
                 label: Some("Background Command Encoder"),
             });
 
+        {
+            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("Line Segment Renderer Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(
+                            Theme::current()
+                                .properties()
+                                .get(&ThemePropertyName::Background)
+                                .expect_throw("background color")
+                                .vec4()
+                                .expect_throw("background color vector")
+                                .to_wgpu_color(),
+                        ),
+                        store: wgpu::StoreOp::Store,
+                    },
+                    depth_slice: None,
+                })],
+                depth_stencil_attachment: None,
+                occlusion_query_set: None,
+                timestamp_writes: None,
+            });
+        }
+
         self.meta_field_processor
             .process(&mut encoder, self.meta_field.resolution());
 
-        for meta_image in &self.meta_images {
-            self.meta_field_image_processor.process(
-                &self.gpu.device,
-                &mut encoder,
-                &self.frame_metadata,
-                &self.meta_field,
-                meta_image,
-            );
-        }
-
-        self.meta_field_renderer.render(&mut encoder, &view);
+        // self.meta_field_renderer.render(&mut encoder, &view);
 
         self.marching_squares_processor.process(
             &self.gpu.queue,
