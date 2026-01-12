@@ -127,4 +127,22 @@ impl MetaShapes {
     pub fn buffer(&self) -> &wgpu::Buffer {
         &self.buffer
     }
+
+    pub fn update_from_panels(&mut self, scroll_pos: IVec2, panels: &[web_sys::HtmlElement]) {
+        if panels.len() > self.boxes.len() {
+            panic!("Not enough boxes to represent panels");
+        }
+
+        for (i, panel) in panels.iter().enumerate() {
+            let rect = panel.get_bounding_client_rect();
+            self.boxes[i] = MetaBox {
+                min: vec2(rect.left() as f32, rect.top() as f32)
+                    + Vec2::splat(36.0)
+                    + scroll_pos.as_vec2(),
+                max: vec2(rect.right() as f32, rect.bottom() as f32) - Vec2::splat(36.0)
+                    + scroll_pos.as_vec2(),
+                radius: 36.0,
+            };
+        }
+    }
 }

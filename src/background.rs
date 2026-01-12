@@ -3,10 +3,12 @@ use std::sync::mpsc;
 use ahash::HashMap;
 use glam::*;
 use strum::IntoDiscriminant;
-use wasm_bindgen::UnwrapThrowExt as _;
+use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
 
 use crate::{
-    ext::{CanvasExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt},
+    ext::{
+        CanvasExt as _, HtmlCollectionExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt,
+    },
     frame::FrameMetadata,
     gpu::Gpu,
     line_segment::LineSegments,
@@ -41,6 +43,7 @@ pub struct Background {
     line_segments: LineSegments,
     frame_timer: web_time::Instant,
     mouse: Mouse,
+    panels: Vec<web_sys::HtmlElement>,
 }
 
 impl Background {
@@ -51,7 +54,18 @@ impl Background {
     ) -> Self {
         let frame_metadata = FrameMetadata::new(&gpu.device, canvas.size(), IVec2::ZERO);
 
-        let mut meta_shapes = MetaShapes::new(&gpu.device, 1, 0, 0);
+        let window = web_sys::window().expect_throw("window");
+        let document = window.document().expect_throw("document");
+
+        let panels = document
+            .get_elements_by_class_name("panel")
+            .iter()
+            .map(|el| el.dyn_into::<web_sys::HtmlElement>().unwrap_throw())
+            .collect::<Vec<_>>();
+
+        let mut meta_shapes = MetaShapes::new(&gpu.device, 1, 0, panels.len());
+
+        meta_shapes.update_from_panels(window.scroll_pos(), &panels);
         // let mut meta_shapes = MetaShapes::new(&gpu.device, 2, 1, 1);
         // meta_shapes.balls_mut()[1] = MetaBall {
         //     position: vec2(200.0, 200.0),
@@ -68,7 +82,9 @@ impl Background {
         //     radius: 48.0,
         // };
 
-        let meta_field = MetaField::new(&gpu.device, &frame_metadata, 8);
+        const CELL_SIZE: u32 = 4;
+        const FADE_DIST: u32 = 36;
+        let meta_field = MetaField::new(&gpu.device, &frame_metadata, CELL_SIZE, FADE_DIST);
 
         let line_segments = LineSegments::new(&gpu.device, &meta_field);
 
@@ -105,6 +121,7 @@ impl Background {
             line_segments,
             frame_timer,
             mouse,
+            panels,
         }
     }
 
@@ -176,6 +193,9 @@ impl Background {
             &self.frame_metadata,
             &self.line_segments,
         );
+
+        self.meta_shapes
+            .update_from_panels(window.scroll_pos(), &self.panels);
     }
 
     fn handle_mouse_move(&mut self, pos: IVec2) {
@@ -192,7 +212,7 @@ impl Background {
 
         self.meta_shapes.balls_mut()[0] = MetaBall {
             position: self.mouse.position(),
-            radius: 36.0,
+            radius: 64.0,
         };
 
         self.meta_shapes.ensure_buffer(&self.gpu.queue);

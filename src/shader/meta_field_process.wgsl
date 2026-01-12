@@ -8,6 +8,7 @@ var<uniform> frame_metadata: FrameMetadata;
 struct MetaFieldMetadata {
     offset: vec2<i32>,
     cell_size: u32,
+    fade_dist: u32,
 }
 @group(0) @binding(1)
 var<uniform> metadata: MetaFieldMetadata;
@@ -105,5 +106,14 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
 fn meta_value(disp: vec2<f32>, radius: f32) -> f32 {
     let dist_sq = dot(disp, disp);
-    return radius * radius / max(dist_sq, 1.0);
+    let radius_sq = radius * radius;
+    let implicit = radius_sq / max(dist_sq, 1.0);
+
+    if dist_sq > radius_sq {
+        let fade_dist = sqrt(dist_sq) - radius;
+        let fade_factor = min(fade_dist / f32(metadata.fade_dist), 1.0);
+        return mix(implicit, 0.0, fade_factor);
+    } else {
+        return implicit;
+    }
 }

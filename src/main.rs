@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{
     background::{Background, BackgroundEvent},
-    ext::{CanvasExt as _, MouseEventExt as _},
+    ext::{CanvasExt as _, HtmlCollectionExt as _, MouseEventExt as _},
     gpu::Gpu,
     theme::Theme,
 };
@@ -49,55 +49,57 @@ fn main() {
 
     let document = window.document().unwrap_throw();
 
-    let canvas = document
-        .get_element_by_id("background")
-        .unwrap_throw()
-        .dyn_into::<web_sys::HtmlCanvasElement>()
-        .unwrap_throw();
-
     Theme::set_current(Theme::Dark);
+    {
+        let document = document.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            let canvas = document
+                .get_element_by_id("background")
+                .unwrap_throw()
+                .dyn_into::<web_sys::HtmlCanvasElement>()
+                .unwrap_throw();
 
-    wasm_bindgen_futures::spawn_local(async move {
-        let gpu = Gpu::new(canvas.clone()).await;
+            let gpu = Gpu::new(canvas.clone()).await;
 
-        let (tx, rx) = mpsc::channel();
-        let mut background = Background::new(gpu, canvas.clone(), rx);
-        add_event_listener!(window, "mousemove", {
-            let tx = tx.clone();
-            move |event: web_sys::MouseEvent| {
-                if let Err(e) = tx.send(BackgroundEvent::MouseMove(event.client_position())) {
-                    log::error!("Failed to send mouse move event: {e}");
+            let (tx, rx) = mpsc::channel();
+            let mut background = Background::new(gpu, canvas.clone(), rx);
+            add_event_listener!(window, "mousemove", {
+                let tx = tx.clone();
+                move |event: web_sys::MouseEvent| {
+                    if let Err(e) = tx.send(BackgroundEvent::MouseMove(event.client_position())) {
+                        log::error!("Failed to send mouse move event: {e}");
+                    }
                 }
-            }
-        }; FnMut(_));
-        add_event_listener!(window, "resize", {
-            let tx = tx.clone();
-            move || {
-                if let Err(e) = tx.send(BackgroundEvent::Resize) {
-                    log::error!("Failed to send resize event: {e}");
-                }
-            }
-        }; FnMut());
-
-        log::debug!("Background initialized");
-
-        let update = Rc::<OnceCell<Closure<dyn FnMut()>>>::default();
-        update
-            .set(Closure::wrap(Box::new({
-                let update = update.clone();
-                let window = window.clone();
+            }; FnMut(_));
+            add_event_listener!(window, "resize", {
+                let tx = tx.clone();
                 move || {
-                    background.update();
-                    window
-                        .request_animation_frame(update.get().unwrap().as_ref().unchecked_ref())
-                        .unwrap_throw();
+                    if let Err(e) = tx.send(BackgroundEvent::Resize) {
+                        log::error!("Failed to send resize event: {e}");
+                    }
                 }
-            }) as Box<dyn FnMut()>))
-            .unwrap_throw();
-        window
-            .request_animation_frame(update.get().unwrap_throw().as_ref().unchecked_ref())
-            .unwrap_throw();
-    });
+            }; FnMut());
+
+            log::debug!("Background initialized");
+
+            let update = Rc::<OnceCell<Closure<dyn FnMut()>>>::default();
+            update
+                .set(Closure::wrap(Box::new({
+                    let update = update.clone();
+                    let window = window.clone();
+                    move || {
+                        background.update();
+                        window
+                            .request_animation_frame(update.get().unwrap().as_ref().unchecked_ref())
+                            .unwrap_throw();
+                    }
+                }) as Box<dyn FnMut()>))
+                .unwrap_throw();
+            window
+                .request_animation_frame(update.get().unwrap_throw().as_ref().unchecked_ref())
+                .unwrap_throw();
+        });
+    }
 
     document
         .get_element_by_id("loading-cover")

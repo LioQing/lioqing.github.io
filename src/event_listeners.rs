@@ -1,5 +1,7 @@
 use glam::*;
 use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
+use wasm_bindgen_futures::JsFuture;
+use web_time::web;
 
 use crate::{
     add_event_listener,
@@ -248,11 +250,67 @@ pub fn init() {
     }
 
     // Experiences filter
-    {
-        let experiences_filter_ids = [
-            "experiences-education-fitler",
-            "experiences-work-filter",
-            "experiences-others-filter",
-        ];
-    }
+    wasm_bindgen_futures::spawn_local(async move {
+        #[derive(Debug, Clone, Copy, strum::Display, serde::Deserialize)]
+        #[strum(serialize_all = "lowercase")]
+        #[serde(rename_all = "lowercase")]
+        enum Filter {
+            Education,
+            Work,
+            Others,
+        }
+
+        #[derive(Debug, Clone, serde::Deserialize)]
+        struct Experience {
+            name: String,
+            organization: String,
+            filter: Filter,
+            start_year: u32,
+            start_month: u32,
+            end_year: Option<u32>,
+            end_month: Option<u32>,
+        }
+
+        let experiences_list = document
+            .get_element_by_id("experiences-list")
+            .unwrap_throw()
+            .dyn_into::<web_sys::HtmlElement>()
+            .unwrap_throw();
+
+        let response = JsFuture::from(window.fetch_with_str("assets/experiences.json"))
+            .await
+            .unwrap_throw()
+            .dyn_into::<web_sys::Response>()
+            .unwrap_throw();
+        let json = JsFuture::from(response.json().unwrap_throw())
+            .await
+            .unwrap_throw();
+        let experiences = serde_wasm_bindgen::from_value::<Vec<Experience>>(json).unwrap_throw();
+
+        let html = experiences
+            .into_iter()
+            .map(|experience| {
+                let start_date =
+                    format!("{:04}-{:02}", experience.start_year, experience.start_month);
+                let end_date = match (experience.end_year, experience.end_month) {
+                    (Some(year), Some(month)) => format!("{:04}-{:02}", year, month),
+                    _ => "Present".to_string(),
+                };
+                format!(
+                    "
+                    <div class=\"panel experience\">
+                        <div>
+                            <h3>{}</h3>
+                            <p>{}</p>
+                            <p>{} - {}</p>
+                        </div>
+                    </div>
+                    ",
+                    experience.name, experience.organization, start_date, end_date
+                )
+            })
+            .collect::<String>();
+
+        experiences_list.set_inner_html(&html);
+    });
 }

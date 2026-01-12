@@ -1,4 +1,4 @@
-const width: f32 = 4.0;
+const width: f32 = 2.0;
 const half_width: f32 = width / 2.0;
 
 struct FrameMetadata {

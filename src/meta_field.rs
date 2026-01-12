@@ -8,20 +8,26 @@ use crate::frame::FrameMetadata;
 pub struct MetaFieldMetadata {
     offset: IVec2,
     cell_size: u32,
-    _padding: u32,
+    fade_dist: u32,
 }
 
 #[derive(Debug)]
 pub struct MetaField {
     resolution: UVec2,
     cell_size: u32,
+    fade_dist: u32,
     offset: IVec2,
     buffer: wgpu::Buffer,
     texture: wgpu::Texture,
 }
 
 impl MetaField {
-    pub fn new(device: &wgpu::Device, frame_metadata: &FrameMetadata, cell_size: u32) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        frame_metadata: &FrameMetadata,
+        cell_size: u32,
+        fade_dist: u32,
+    ) -> Self {
         // We want to grid to be larger than the resolution,
         // so line segments' endpoints on the edge are still included.
         let resolution = frame_metadata.resolution() / cell_size + UVec2::splat(2);
@@ -33,7 +39,7 @@ impl MetaField {
             contents: bytemuck::bytes_of(&MetaFieldMetadata {
                 offset,
                 cell_size,
-                ..Default::default()
+                fade_dist,
             }),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
@@ -57,8 +63,9 @@ impl MetaField {
         });
 
         Self {
-            cell_size,
             resolution,
+            cell_size,
+            fade_dist,
             offset,
             buffer,
             texture,
@@ -66,15 +73,19 @@ impl MetaField {
     }
 
     pub fn resize(&mut self, device: &wgpu::Device, frame_metadata: &FrameMetadata) {
-        *self = Self::new(device, frame_metadata, self.cell_size);
+        *self = Self::new(device, frame_metadata, self.cell_size, self.fade_dist);
+    }
+
+    pub fn resolution(&self) -> UVec2 {
+        self.resolution
     }
 
     pub fn cell_size(&self) -> u32 {
         self.cell_size
     }
 
-    pub fn resolution(&self) -> UVec2 {
-        self.resolution
+    pub fn fade_dist(&self) -> u32 {
+        self.fade_dist
     }
 
     pub fn offset(&self) -> IVec2 {
