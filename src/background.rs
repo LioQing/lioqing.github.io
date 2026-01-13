@@ -11,13 +11,15 @@ use crate::{
     },
     frame::FrameMetadata,
     gpu::Gpu,
-    line_segment::LineSegments,
+    mar_sq::{
+        line_segment::LineSegments,
+        pipeline::{MarchingSquaresProcessor, MarchingSquaresShapeRenderer},
+        quad::Quads,
+    },
     meta_field::MetaField,
     meta_shape::{MetaBall, MetaBox, MetaLine, MetaShapes},
     mouse::Mouse,
-    pipeline::{
-        LineSegmentRenderer, MarchingSquaresProcessor, MetaFieldProcessor, MetaFieldRenderer,
-    },
+    pipeline::{MetaFieldProcessor, MetaFieldRenderer},
     theme::{Theme, ThemePropertyName},
 };
 
@@ -35,12 +37,13 @@ pub struct Background {
     background_events: mpsc::Receiver<BackgroundEvent>,
     meta_field_processor: MetaFieldProcessor,
     meta_field_renderer: MetaFieldRenderer,
-    marching_squares_processor: MarchingSquaresProcessor,
-    line_segment_renderer: LineSegmentRenderer,
+    marching_squares_processor: MarchingSquaresProcessor<Quads>,
+    marching_squares_shape_renderer: MarchingSquaresShapeRenderer<Quads>,
     frame_metadata: FrameMetadata,
     meta_shapes: MetaShapes,
     meta_field: MetaField,
     line_segments: LineSegments,
+    quads: Quads,
     frame_timer: web_time::Instant,
     mouse: Mouse,
     panels: Vec<web_sys::HtmlElement>,
@@ -87,6 +90,7 @@ impl Background {
         let meta_field = MetaField::new(&gpu.device, &frame_metadata, CELL_SIZE, FADE_DIST);
 
         let line_segments = LineSegments::new(&gpu.device, &meta_field);
+        let quads = Quads::new(&gpu.device, &meta_field);
 
         let meta_field_processor =
             MetaFieldProcessor::new(&gpu.device, &frame_metadata, &meta_shapes, &meta_field);
@@ -95,12 +99,12 @@ impl Background {
             MetaFieldRenderer::new(&gpu.device, &meta_field, gpu.config.format);
 
         let marching_squares_processor =
-            MarchingSquaresProcessor::new(&gpu.device, &meta_field, &line_segments);
+            MarchingSquaresProcessor::new(&gpu.device, &meta_field, &quads);
 
-        let line_segment_renderer = LineSegmentRenderer::new(
+        let marching_squares_shape_renderer = MarchingSquaresShapeRenderer::new(
             &gpu.device,
             &frame_metadata,
-            &line_segments,
+            &quads,
             gpu.config.format,
         );
 
@@ -114,11 +118,12 @@ impl Background {
             meta_field_processor,
             meta_field_renderer,
             marching_squares_processor,
-            line_segment_renderer,
+            marching_squares_shape_renderer,
             frame_metadata,
             meta_shapes,
             meta_field,
             line_segments,
+            quads,
             frame_timer,
             mouse,
             panels,
@@ -185,13 +190,13 @@ impl Background {
         self.marching_squares_processor.recreate_bind_group(
             &self.gpu.device,
             &self.meta_field,
-            &self.line_segments,
+            &self.quads,
         );
 
-        self.line_segment_renderer.recreate_bind_group(
+        self.marching_squares_shape_renderer.recreate_bind_group(
             &self.gpu.device,
             &self.frame_metadata,
-            &self.line_segments,
+            &self.quads,
         );
 
         self.meta_shapes
@@ -278,8 +283,11 @@ impl Background {
             self.meta_field.resolution(),
         );
 
-        self.line_segment_renderer
-            .render(&mut encoder, &view, &self.marching_squares_processor);
+        self.marching_squares_shape_renderer.render(
+            &mut encoder,
+            &view,
+            &self.marching_squares_processor,
+        );
 
         self.gpu.queue.submit(Some(encoder.finish()));
         texture.present();
