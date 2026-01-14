@@ -19,13 +19,6 @@ struct DrawIndirectArgs {
 @group(0) @binding(2)
 var<storage, read_write> quad_indirect_args: DrawIndirectArgs;
 
-// Quad is formed by two adjacent triangles:
-//
-// v0----v1
-// | \    |
-// |   \  |
-// |     \|
-// v3----v2
 @group(0) @binding(3)
 var<storage, read_write> quads: array<vec2<i32>>;
 

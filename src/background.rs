@@ -6,11 +6,16 @@ use strum::IntoDiscriminant;
 use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
 
 use crate::{
+    delta_time::{self, DeltaTime},
     ext::{
         CanvasExt as _, HtmlCollectionExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt,
     },
     frame::FrameMetadata,
     gpu::Gpu,
+    grid::{
+        GridMetadata, GridState,
+        pipeline::{GridProcessor, GridRenderer},
+    },
     mar_sq::{
         line_segment::LineSegments,
         pipeline::{MarchingSquaresProcessor, MarchingSquaresShapeRenderer},
@@ -35,15 +40,26 @@ pub enum BackgroundEvent {
 pub struct Background {
     gpu: Gpu,
     background_events: mpsc::Receiver<BackgroundEvent>,
+
+    // Pipelines
+    grid_processor: GridProcessor,
+    grid_renderer: GridRenderer,
     meta_field_processor: MetaFieldProcessor,
     meta_field_renderer: MetaFieldRenderer,
     marching_squares_processor: MarchingSquaresProcessor<Quads>,
     marching_squares_shape_renderer: MarchingSquaresShapeRenderer<Quads>,
+
+    // Data
     frame_metadata: FrameMetadata,
+    delta_time: DeltaTime,
+    grid_state: GridState,
+    grid_metadata: GridMetadata,
     meta_shapes: MetaShapes,
     meta_field: MetaField,
     line_segments: LineSegments,
     quads: Quads,
+
+    // State
     frame_timer: web_time::Instant,
     mouse: Mouse,
     panels: Vec<web_sys::HtmlElement>,
@@ -56,6 +72,9 @@ impl Background {
         background_events: mpsc::Receiver<BackgroundEvent>,
     ) -> Self {
         let frame_metadata = FrameMetadata::new(&gpu.device, canvas.size(), IVec2::ZERO);
+        let delta_time = DeltaTime::new(&gpu.device);
+        let grid_metadata = GridMetadata::new(&gpu.device, &frame_metadata);
+        let grid_state = GridState::new(&gpu.device, &grid_metadata);
 
         let window = web_sys::window().expect_throw("window");
         let document = window.document().expect_throw("document");
@@ -92,6 +111,22 @@ impl Background {
         let line_segments = LineSegments::new(&gpu.device, &meta_field);
         let quads = Quads::new(&gpu.device, &meta_field);
 
+        let grid_processor = GridProcessor::new(
+            &gpu.device,
+            &frame_metadata,
+            &grid_metadata,
+            &delta_time,
+            &grid_state,
+        );
+
+        let grid_renderer = GridRenderer::new(
+            &gpu.device,
+            &frame_metadata,
+            &grid_metadata,
+            &grid_state,
+            gpu.config.format,
+        );
+
         let meta_field_processor =
             MetaFieldProcessor::new(&gpu.device, &frame_metadata, &meta_shapes, &meta_field);
 
@@ -115,15 +150,23 @@ impl Background {
         Self {
             gpu,
             background_events,
+
+            grid_processor,
+            grid_renderer,
             meta_field_processor,
             meta_field_renderer,
             marching_squares_processor,
             marching_squares_shape_renderer,
+
             frame_metadata,
+            delta_time,
+            grid_state,
+            grid_metadata,
             meta_shapes,
             meta_field,
             line_segments,
             quads,
+
             frame_timer,
             mouse,
             panels,
@@ -174,6 +217,27 @@ impl Background {
         self.frame_metadata
             .update(&self.gpu.queue, self.gpu.config.size(), window.scroll_pos());
 
+        self.grid_metadata
+            .update(&self.gpu.queue, &self.frame_metadata);
+
+        self.grid_state
+            .resize(&self.gpu.device, &self.grid_metadata);
+
+        self.grid_processor.recreate_bind_group(
+            &self.gpu.device,
+            &self.frame_metadata,
+            &self.grid_metadata,
+            &self.delta_time,
+            &self.grid_state,
+        );
+
+        self.grid_renderer.recreate_bind_group(
+            &self.gpu.device,
+            &self.frame_metadata,
+            &self.grid_metadata,
+            &self.grid_state,
+        );
+
         self.meta_field
             .resize(&self.gpu.device, &self.frame_metadata);
 
@@ -213,11 +277,19 @@ impl Background {
         self.frame_metadata
             .update(&self.gpu.queue, self.gpu.config.size(), window.scroll_pos());
 
+        self.delta_time.update(&self.gpu.queue, delta_time);
+
         self.mouse.update(&self.frame_metadata, delta_time);
+
+        self.grid_processor.update_target(
+            &self.gpu.queue,
+            self.mouse.position() - self.frame_metadata.top_left().as_vec2(),
+            delta_time,
+        );
 
         self.meta_shapes.balls_mut()[0] = MetaBall {
             position: self.mouse.position(),
-            radius: 64.0,
+            radius: 48.0,
         };
 
         self.meta_shapes.ensure_buffer(&self.gpu.queue);
@@ -248,7 +320,7 @@ impl Background {
 
         {
             encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Line Segment Renderer Render Pass"),
+                label: Some("Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &view,
                     resolve_target: None,
@@ -271,6 +343,12 @@ impl Background {
                 timestamp_writes: None,
             });
         }
+
+        self.grid_processor
+            .process(&mut encoder, self.grid_metadata.resolution());
+
+        self.grid_renderer
+            .render(&mut encoder, &view, self.grid_metadata.resolution());
 
         self.meta_field_processor
             .process(&mut encoder, self.meta_field.resolution());

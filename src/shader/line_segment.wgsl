@@ -29,7 +29,7 @@ fn vert_main(
     let dir = normalize(end - start) * half_width;
     let perp = vec2<f32>(-dir.y, dir.x);
 
-    var positions = array<vec2<f32>, 4>(
+    let positions = array<vec2<f32>, 4>(
         start - perp - dir, // 0: bottom-left of start
         start + perp - dir, // 1: top-left of start
         end - perp + dir,   // 2: bottom-right of end
