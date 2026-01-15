@@ -9,8 +9,8 @@ pub struct Target {
 }
 
 impl Target {
-    pub fn new(device: &wgpu::Device) -> Self {
-        let position = Vec2::ZERO;
+    pub fn new(device: &wgpu::Device, init_target: Vec2) -> Self {
+        let position = init_target;
         let velocity = Vec2::ZERO;
 
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -27,8 +27,8 @@ impl Target {
     }
 
     pub fn update(&mut self, queue: &wgpu::Queue, new_target: Vec2, delta_time: f32) {
-        const SPRING_K: f32 = 50.0;
-        const DAMPING: f32 = 5.0;
+        const SPRING_K: f32 = 80.0;
+        const DAMPING: f32 = 8.0;
 
         if delta_time > 0.0 {
             let disp = self.position - new_target;

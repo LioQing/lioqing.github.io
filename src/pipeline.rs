@@ -195,14 +195,33 @@ impl MetaFieldProcessor {
     }
 }
 
+pub trait MetaFieldRenderType {
+    const SHADER: &'static str;
+}
+
 #[derive(Debug)]
-pub struct MetaFieldRenderer {
+pub struct MetaFieldMag;
+
+#[derive(Debug)]
+pub struct MetaFieldGrad;
+
+impl MetaFieldRenderType for MetaFieldMag {
+    const SHADER: &'static str = include_str!("shader/meta_field.wgsl");
+}
+
+impl MetaFieldRenderType for MetaFieldGrad {
+    const SHADER: &'static str = include_str!("shader/meta_field_grad.wgsl");
+}
+
+#[derive(Debug)]
+pub struct MetaFieldRenderer<T: MetaFieldRenderType> {
     render_pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
     bind_group: wgpu::BindGroup,
+    phantom: std::marker::PhantomData<T>,
 }
 
-impl MetaFieldRenderer {
+impl<T: MetaFieldRenderType> MetaFieldRenderer<T> {
     pub fn new(
         device: &wgpu::Device,
         meta_field: &MetaField,
@@ -210,7 +229,7 @@ impl MetaFieldRenderer {
     ) -> Self {
         let render_shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Meta Field Renderer Shader Module"),
-            source: wgpu::ShaderSource::Wgsl(include_str!("shader/meta_field.wgsl").into()),
+            source: wgpu::ShaderSource::Wgsl(T::SHADER.into()),
         });
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -236,12 +255,6 @@ impl MetaFieldRenderer {
                     },
                     count: None,
                 },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
-                    count: None,
-                },
             ],
         });
 
@@ -261,17 +274,6 @@ impl MetaFieldRenderer {
                             .create_view(&wgpu::TextureViewDescriptor::default()),
                     ),
                 },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::Sampler(&device.create_sampler(
-                        &wgpu::SamplerDescriptor {
-                            label: Some("Meta Field Renderer Sampler"),
-                            mag_filter: wgpu::FilterMode::Nearest,
-                            min_filter: wgpu::FilterMode::Nearest,
-                            ..Default::default()
-                        },
-                    )),
-                },
             ],
         });
 
@@ -282,6 +284,11 @@ impl MetaFieldRenderer {
                 push_constant_ranges: &[],
             });
 
+        let compilation_options = wgpu::PipelineCompilationOptions {
+            constants: &[("cell_size", meta_field.cell_size() as f64)],
+            ..Default::default()
+        };
+
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Meta Field Renderer Render Pipeline"),
             layout: Some(&render_pipeline_layout),
@@ -289,7 +296,7 @@ impl MetaFieldRenderer {
                 module: &render_shader_module,
                 entry_point: Some("vert_main"),
                 buffers: &[],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                compilation_options: compilation_options.clone(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &render_shader_module,
@@ -299,7 +306,7 @@ impl MetaFieldRenderer {
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                compilation_options,
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleStrip,
@@ -320,6 +327,7 @@ impl MetaFieldRenderer {
             render_pipeline,
             bind_group_layout,
             bind_group,
+            phantom: std::marker::PhantomData,
         }
     }
 
@@ -339,17 +347,6 @@ impl MetaFieldRenderer {
                             .texture()
                             .create_view(&wgpu::TextureViewDescriptor::default()),
                     ),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::Sampler(&device.create_sampler(
-                        &wgpu::SamplerDescriptor {
-                            label: Some("Meta Field Renderer Sampler"),
-                            mag_filter: wgpu::FilterMode::Nearest,
-                            min_filter: wgpu::FilterMode::Nearest,
-                            ..Default::default()
-                        },
-                    )),
                 },
             ],
         });

@@ -23,6 +23,7 @@ impl GridProcessor {
         grid_metadata: &GridMetadata,
         delta_time: &DeltaTime,
         grid_state: &GridState,
+        mouse: Vec2,
     ) -> Self {
         let workgroup_size = {
             let mut max_size = None;
@@ -43,7 +44,7 @@ impl GridProcessor {
             max_size.expect("device must support workgroup size of at least 4")
         };
 
-        let target = Target::new(device);
+        let target = Target::new(device, mouse - frame_metadata.top_left().as_vec2());
 
         let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Grid Processor Shader Module"),
@@ -217,8 +218,18 @@ impl GridProcessor {
         });
     }
 
-    pub fn update_target(&mut self, queue: &wgpu::Queue, new_target: Vec2, delta_time: f32) {
-        self.target.update(queue, new_target, delta_time);
+    pub fn update_target(
+        &mut self,
+        queue: &wgpu::Queue,
+        frame_metadata: &FrameMetadata,
+        mouse: Vec2,
+        delta_time: f32,
+    ) {
+        self.target.update(
+            queue,
+            mouse - frame_metadata.top_left().as_vec2(),
+            delta_time,
+        );
     }
 
     pub fn process(&self, encoder: &mut wgpu::CommandEncoder, grid_resolution: UVec2) {

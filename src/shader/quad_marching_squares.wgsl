@@ -43,10 +43,10 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let bottom_left = textureLoad(texture, bottom_left_coord).x;
 
     let patt = (
-        (u32(top_left > 1.0) << 3u) |
-        (u32(top_right > 1.0) << 2u) |
-        (u32(bottom_right > 1.0) << 1u) |
-        (u32(bottom_left > 1.0) << 0u)
+        (u32(top_left >= 1.0) << 3u) |
+        (u32(top_right >= 1.0) << 2u) |
+        (u32(bottom_right >= 1.0) << 1u) |
+        (u32(bottom_left >= 1.0) << 0u)
     );
 
     let top_left_pos = vec2<f32>(top_left_coord);

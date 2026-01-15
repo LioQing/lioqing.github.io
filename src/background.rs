@@ -24,7 +24,7 @@ use crate::{
     meta_field::MetaField,
     meta_shape::{MetaBall, MetaBox, MetaLine, MetaShapes},
     mouse::Mouse,
-    pipeline::{MetaFieldProcessor, MetaFieldRenderer},
+    pipeline::{MetaFieldGrad, MetaFieldMag, MetaFieldProcessor, MetaFieldRenderer},
     theme::{Theme, ThemePropertyName},
 };
 
@@ -40,12 +40,15 @@ pub enum BackgroundEvent {
 pub struct Background {
     gpu: Gpu,
     background_events: mpsc::Receiver<BackgroundEvent>,
+    panels: Vec<web_sys::HtmlElement>,
+    frame_timer: web_time::Instant,
+    mouse: Mouse,
 
     // Pipelines
     grid_processor: GridProcessor,
     grid_renderer: GridRenderer,
     meta_field_processor: MetaFieldProcessor,
-    meta_field_renderer: MetaFieldRenderer,
+    meta_field_renderer: MetaFieldRenderer<MetaFieldGrad>,
     marching_squares_processor: MarchingSquaresProcessor<Quads>,
     marching_squares_shape_renderer: MarchingSquaresShapeRenderer<Quads>,
 
@@ -58,11 +61,6 @@ pub struct Background {
     meta_field: MetaField,
     line_segments: LineSegments,
     quads: Quads,
-
-    // State
-    frame_timer: web_time::Instant,
-    mouse: Mouse,
-    panels: Vec<web_sys::HtmlElement>,
 }
 
 impl Background {
@@ -84,6 +82,10 @@ impl Background {
             .iter()
             .map(|el| el.dyn_into::<web_sys::HtmlElement>().unwrap_throw())
             .collect::<Vec<_>>();
+
+        let frame_timer = web_time::Instant::now();
+
+        let mouse = Mouse::new(frame_metadata.resolution().as_vec2() / 2.0);
 
         let mut meta_shapes = MetaShapes::new(&gpu.device, 1, 0, panels.len());
 
@@ -117,6 +119,7 @@ impl Background {
             &grid_metadata,
             &delta_time,
             &grid_state,
+            mouse.position(),
         );
 
         let grid_renderer = GridRenderer::new(
@@ -143,13 +146,12 @@ impl Background {
             gpu.config.format,
         );
 
-        let frame_timer = web_time::Instant::now();
-
-        let mouse = Mouse::new(frame_metadata.resolution().as_vec2() / 2.0);
-
         Self {
             gpu,
             background_events,
+            panels,
+            frame_timer,
+            mouse,
 
             grid_processor,
             grid_renderer,
@@ -166,10 +168,6 @@ impl Background {
             meta_field,
             line_segments,
             quads,
-
-            frame_timer,
-            mouse,
-            panels,
         }
     }
 
@@ -283,7 +281,8 @@ impl Background {
 
         self.grid_processor.update_target(
             &self.gpu.queue,
-            self.mouse.position() - self.frame_metadata.top_left().as_vec2(),
+            &self.frame_metadata,
+            self.mouse.position(),
             delta_time,
         );
 
@@ -353,7 +352,7 @@ impl Background {
         self.meta_field_processor
             .process(&mut encoder, self.meta_field.resolution());
 
-        // self.meta_field_renderer.render(&mut encoder, &view);
+        self.meta_field_renderer.render(&mut encoder, &view);
 
         self.marching_squares_processor.process(
             &self.gpu.queue,
@@ -361,11 +360,11 @@ impl Background {
             self.meta_field.resolution(),
         );
 
-        self.marching_squares_shape_renderer.render(
-            &mut encoder,
-            &view,
-            &self.marching_squares_processor,
-        );
+        // self.marching_squares_shape_renderer.render(
+        //     &mut encoder,
+        //     &view,
+        //     &self.marching_squares_processor,
+        // );
 
         self.gpu.queue.submit(Some(encoder.finish()));
         texture.present();

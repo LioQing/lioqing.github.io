@@ -50,7 +50,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
         let radius = meta_shapes.data[ball_offset + 2u];
 
         let disp = vec2<f32>(cell_pos) - center;
-        value += meta_value(disp, radius);
+        value += implicit(length(disp), radius);
     }
 
     let line_data_start = meta_shapes.metadata.ball_count * 3u;
@@ -80,7 +80,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
             to_start_dot_line <= 0.0,
         );
         let disp = vec2<f32>(cell_pos) - closest_point;
-        value += meta_value(disp, radius);
+        value += implicit(length(disp), radius);
     }
 
     let box_data_start = line_data_start + meta_shapes.metadata.line_count * 5u;
@@ -98,22 +98,21 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
         let clamped = clamp(vec2<f32>(cell_pos), min, max);
         let disp = vec2<f32>(cell_pos) - clamped;
-        value += meta_value(disp, radius);
+        value += select(
+            implicit(length(disp), radius),
+            1e8,
+            all(clamped == vec2<f32>(cell_pos)),
+        );
     }
+
+    value = min(value, 1e8);
 
     textureStore(texture, id.xy, vec4<f32>(value, 0.0, 0.0, 0.0));
 }
 
-fn meta_value(disp: vec2<f32>, radius: f32) -> f32 {
-    let dist_sq = dot(disp, disp);
-    let radius_sq = radius * radius;
-    let implicit = radius_sq / max(dist_sq, 1.0);
-
-    if dist_sq > radius_sq {
-        let fade_dist = sqrt(dist_sq) - radius;
-        let fade_factor = min(fade_dist / f32(metadata.fade_dist), 1.0);
-        return mix(implicit, 0.0, fade_factor);
-    } else {
-        return implicit;
-    }
+fn implicit(dist: f32, radius: f32) -> f32 {
+    let fade_dist = f32(metadata.fade_dist);
+    let implicit = radius * radius / (dist * dist);
+    let fade_factor = saturate((dist - radius) / fade_dist);
+    return implicit * (1.0 - fade_factor);
 }
