@@ -40,7 +40,7 @@ impl Gpu {
         let surface_format = surface_caps
             .formats
             .iter()
-            .find(|f| f.is_srgb())
+            .find(|f| matches!(f, wgpu::TextureFormat::Bgra8Unorm))
             .copied()
             .unwrap_or(surface_caps.formats[0]);
 

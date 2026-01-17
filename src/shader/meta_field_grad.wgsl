@@ -8,7 +8,13 @@ var<uniform> metadata: MetaFieldMetadata;
 @group(0) @binding(1)
 var meta_field_texture: texture_2d<f32>;
 
-override cell_size: u32;
+override radius: f32;
+override fade_dist: f32;
+override height: f32;
+
+override radius_sq: f32 = radius * radius;
+override fade_dist_sq: f32 = fade_dist * fade_dist;
+override height_sq: f32 = height * height;
 
 @vertex
 fn vert_main(@builtin(vertex_index) vert_index: u32) -> @builtin(position) vec4<f32> {
@@ -23,23 +29,23 @@ fn vert_main(@builtin(vertex_index) vert_index: u32) -> @builtin(position) vec4<
 fn frag_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
     let meta_field_coord = (frag_coord.xy + 0.5 - vec2<f32>(metadata.offset)) / f32(metadata.cell_size);
 
-    let mag_tl = max(0.0, load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, -1.0)));
-    let mag_tp = max(0.0, load_meta_mag_bilinear(meta_field_coord + vec2<f32>(0.0, -1.0)));
-    let mag_tr = max(0.0, load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, -1.0)));
-    let mag_lf = max(0.0, load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, 0.0)));
-    let mag_rg = max(0.0, load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, 0.0)));
-    let mag_bl = max(0.0, load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, 1.0)));
-    let mag_bm = max(0.0, load_meta_mag_bilinear(meta_field_coord + vec2<f32>(0.0, 1.0)));
-    let mag_br = max(0.0, load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, 1.0)));
+    let mag_tl = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, -1.0)));
+    let mag_tp = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(0.0, -1.0)));
+    let mag_tr = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, -1.0)));
+    let mag_lf = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, 0.0)));
+    let mag_rg = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, 0.0)));
+    let mag_bl = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, 1.0)));
+    let mag_bm = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(0.0, 1.0)));
+    let mag_br = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, 1.0)));
 
     let grad = vec2<f32>(
         (mag_tr + 2.0 * mag_rg + mag_br) - (mag_tl + 2.0 * mag_lf + mag_bl),
         (mag_bl + 2.0 * mag_bm + mag_br) - (mag_tl + 2.0 * mag_tp + mag_tr),
-    ) / f32(cell_size);
+    ) / (4.0 * 2.0 * f32(metadata.cell_size));
     let grad_mag = length(grad);
 
     let hue = atan2(grad.y, grad.x) / (2.0 * 3.14159265) + 0.5;
-    let rgb = hsl_to_rgb(vec3<f32>(hue, 1.0, saturate(grad_mag)));
+    let rgb = hsl_to_rgb(vec3<f32>(hue, 1.0, grad_mag));
 
     return vec4<f32>(rgb, 1.0);
 }
@@ -50,15 +56,41 @@ fn hsl_to_rgb(hsl: vec3<f32>) -> vec3<f32> {
    return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
 }
 
+fn invert_meta_mag(mag: f32) -> f32 {
+    return (
+        -radius_sq + radius * sqrt(
+            radius_sq
+                + 4.0 * radius * fade_dist * mag
+                + 4.0 * fade_dist_sq * mag
+        )
+    ) / (2.0 * fade_dist * mag);
+}
+
+fn rounded_plateau(x: f32) -> f32 {
+    let circle_x = height - clamp(x, 0.0, height);
+    let segment = sqrt(height_sq - circle_x * circle_x);
+    return segment * (1.0 - x / height) + x;
+}
+
+fn normalize_meta_mag(mag: f32) -> f32 {
+    if mag < 1.0 {
+        return 0.0;
+    }
+
+    let inverted = invert_meta_mag(mag);
+    let edge = radius - inverted;
+    return rounded_plateau(edge);
+}
+
 fn load_meta_mag(coord: vec2<i32>) -> f32 {
     let texture_dim = textureDimensions(meta_field_texture);
-    let texture_val = textureLoad(meta_field_texture, coord, 0).x;
-    let offset_val = select(
-        -1.0,
-        texture_val - 1.0,
-        all(coord >= vec2<i32>(0)) && all(coord < vec2<i32>(texture_dim)),
-    );
-    return 1.0 - exp(-offset_val);
+    let mag = textureLoad(
+        meta_field_texture,
+        clamp(coord, vec2<i32>(0), vec2<i32>(texture_dim) - vec2<i32>(1)),
+        0,
+    ).x;
+
+    return mag;
 }
 
 fn load_meta_mag_bilinear(coord: vec2<f32>) -> f32 {

@@ -1,6 +1,12 @@
 use glam::*;
+use vello_svg::vello;
+use wasm_bindgen::UnwrapThrowExt;
 
 use crate::{frame::FrameMetadata, meta_field::MetaField, meta_shape::MetaShapes};
+
+pub const RADIUS: f64 = 36.0;
+pub const FADE_DIST: f64 = 32.0;
+pub const HEIGHT: f64 = 24.0;
 
 #[derive(Debug)]
 pub struct MetaFieldProcessor {
@@ -127,6 +133,8 @@ impl MetaFieldProcessor {
             entry_point: Some("main"),
             compilation_options: wgpu::PipelineCompilationOptions {
                 constants: &[
+                    ("radius", RADIUS),
+                    ("fade_dist", FADE_DIST),
                     ("workgroup_size_x", workgroup_size.x as f64),
                     ("workgroup_size_y", workgroup_size.y as f64),
                 ],
@@ -232,50 +240,15 @@ impl<T: MetaFieldRenderType> MetaFieldRenderer<T> {
             source: wgpu::ShaderSource::Wgsl(T::SHADER.into()),
         });
 
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Meta Field Renderer Bind Group Layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-            ],
-        });
+        let bind_group_layout =
+            Self::create_bind_group_layout(device, Some("Meta Field Renderer Bind Group Layout"));
 
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Meta Field Renderer Bind Group"),
-            layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: meta_field.buffer().as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(
-                        &meta_field
-                            .texture()
-                            .create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
-        });
+        let bind_group = Self::create_bind_group(
+            device,
+            Some("Meta Field Renderer Bind Group"),
+            &bind_group_layout,
+            meta_field,
+        );
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -285,7 +258,11 @@ impl<T: MetaFieldRenderType> MetaFieldRenderer<T> {
             });
 
         let compilation_options = wgpu::PipelineCompilationOptions {
-            constants: &[("cell_size", meta_field.cell_size() as f64)],
+            constants: &[
+                ("radius", RADIUS),
+                ("fade_dist", FADE_DIST),
+                ("height", HEIGHT),
+            ],
             ..Default::default()
         };
 
@@ -332,24 +309,12 @@ impl<T: MetaFieldRenderType> MetaFieldRenderer<T> {
     }
 
     pub fn recreate_bind_group(&mut self, device: &wgpu::Device, meta_field: &MetaField) {
-        self.bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Meta Field Renderer Bind Group"),
-            layout: &self.bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: meta_field.buffer().as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(
-                        &meta_field
-                            .texture()
-                            .create_view(&wgpu::TextureViewDescriptor::default()),
-                    ),
-                },
-            ],
-        });
+        self.bind_group = Self::create_bind_group(
+            device,
+            Some("Meta Field Renderer Bind Group"),
+            &self.bind_group_layout,
+            meta_field,
+        );
     }
 
     pub fn render(&self, encoder: &mut wgpu::CommandEncoder, view: &wgpu::TextureView) {
@@ -372,5 +337,160 @@ impl<T: MetaFieldRenderType> MetaFieldRenderer<T> {
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
         render_pass.draw(0..3, 0..1);
+    }
+
+    pub fn create_bind_group_layout(
+        device: &wgpu::Device,
+        label: Option<&str>,
+    ) -> wgpu::BindGroupLayout {
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label,
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+            ],
+        })
+    }
+
+    pub fn create_bind_group(
+        device: &wgpu::Device,
+        label: Option<&str>,
+        layout: &wgpu::BindGroupLayout,
+        meta_field: &MetaField,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label,
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: meta_field.buffer().as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(
+                        &meta_field
+                            .texture()
+                            .create_view(&wgpu::TextureViewDescriptor::default()),
+                    ),
+                },
+            ],
+        })
+    }
+}
+
+pub struct BackgroundSvgRenderer {
+    scene: vello::Scene,
+    renderer: vello::Renderer,
+    intermediate_texture: wgpu::Texture,
+}
+
+impl BackgroundSvgRenderer {
+    pub fn new(device: &wgpu::Device, frame_metadata: &FrameMetadata) -> Self {
+        let scene =
+            vello_svg::render(include_str!("../assets/test.svg")).expect_throw("background svg");
+
+        let renderer = vello::Renderer::new(
+            device,
+            vello::RendererOptions {
+                use_cpu: false,
+                antialiasing_support: vello::AaSupport::area_only(),
+                num_init_threads: None,
+                pipeline_cache: None,
+            },
+        )
+        .expect_throw("vello renderer");
+
+        let intermediate_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Background SVG Intermediate Texture"),
+            size: wgpu::Extent3d {
+                width: frame_metadata.resolution().x,
+                height: frame_metadata.resolution().y,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+
+        Self {
+            scene,
+            renderer,
+            intermediate_texture,
+        }
+    }
+
+    pub fn resize(&mut self, device: &wgpu::Device, frame_metadata: &FrameMetadata) {
+        self.intermediate_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Background SVG Intermediate Texture"),
+            size: wgpu::Extent3d {
+                width: frame_metadata.resolution().x,
+                height: frame_metadata.resolution().y,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+    }
+
+    pub fn render(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+        surface_blitter: &wgpu::util::TextureBlitter,
+        background_view: &wgpu::TextureView,
+        frame_metadata: &FrameMetadata,
+    ) {
+        if let Err(e) = self.renderer.render_to_texture(
+            device,
+            queue,
+            &self.scene,
+            &self
+                .intermediate_texture
+                .create_view(&wgpu::TextureViewDescriptor::default()),
+            &vello::RenderParams {
+                base_color: vello::peniko::color::palette::css::TRANSPARENT,
+                width: frame_metadata.resolution().x,
+                height: frame_metadata.resolution().y,
+                antialiasing_method: vello::AaConfig::Area,
+            },
+        ) {
+            log::error!("Failed to render background SVG: {e}");
+        }
+
+        surface_blitter.copy(
+            device,
+            encoder,
+            &self
+                .intermediate_texture
+                .create_view(&wgpu::TextureViewDescriptor::default()),
+            background_view,
+        );
     }
 }

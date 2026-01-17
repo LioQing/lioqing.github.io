@@ -6,7 +6,7 @@ use strum::IntoDiscriminant;
 use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
 
 use crate::{
-    delta_time::{self, DeltaTime},
+    delta_time::DeltaTime,
     ext::{
         CanvasExt as _, HtmlCollectionExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt,
     },
@@ -18,13 +18,18 @@ use crate::{
     },
     mar_sq::{
         line_segment::LineSegments,
-        pipeline::{MarchingSquaresProcessor, MarchingSquaresShapeRenderer},
+        pipeline::{
+            MarchingSquaresLiquidQuadRenderer, MarchingSquaresProcessor,
+            MarchingSquaresShapeRenderer,
+        },
         quad::Quads,
     },
     meta_field::MetaField,
     meta_shape::{MetaBall, MetaBox, MetaLine, MetaShapes},
     mouse::Mouse,
-    pipeline::{MetaFieldGrad, MetaFieldMag, MetaFieldProcessor, MetaFieldRenderer},
+    pipeline::{
+        BackgroundSvgRenderer, MetaFieldGrad, MetaFieldMag, MetaFieldProcessor, MetaFieldRenderer,
+    },
     theme::{Theme, ThemePropertyName},
 };
 
@@ -36,7 +41,6 @@ pub enum BackgroundEvent {
     MouseMove(IVec2),
 }
 
-#[derive(Debug)]
 pub struct Background {
     gpu: Gpu,
     background_events: mpsc::Receiver<BackgroundEvent>,
@@ -45,15 +49,19 @@ pub struct Background {
     mouse: Mouse,
 
     // Pipelines
+    background_svg_renderer: BackgroundSvgRenderer,
     grid_processor: GridProcessor,
     grid_renderer: GridRenderer,
     meta_field_processor: MetaFieldProcessor,
     meta_field_renderer: MetaFieldRenderer<MetaFieldGrad>,
     marching_squares_processor: MarchingSquaresProcessor<Quads>,
     marching_squares_shape_renderer: MarchingSquaresShapeRenderer<Quads>,
+    marching_squares_liquid_quad_renderer: MarchingSquaresLiquidQuadRenderer,
+    surface_blitter: wgpu::util::TextureBlitter,
 
     // Data
     frame_metadata: FrameMetadata,
+    background: wgpu::Texture,
     delta_time: DeltaTime,
     grid_state: GridState,
     grid_metadata: GridMetadata,
@@ -70,6 +78,24 @@ impl Background {
         background_events: mpsc::Receiver<BackgroundEvent>,
     ) -> Self {
         let frame_metadata = FrameMetadata::new(&gpu.device, canvas.size(), IVec2::ZERO);
+
+        let background = gpu.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Background Texture"),
+            size: wgpu::Extent3d {
+                width: frame_metadata.resolution().x,
+                height: frame_metadata.resolution().y,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: gpu.config.format,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+
         let delta_time = DeltaTime::new(&gpu.device);
         let grid_metadata = GridMetadata::new(&gpu.device, &frame_metadata);
         let grid_state = GridState::new(&gpu.device, &grid_metadata);
@@ -107,11 +133,12 @@ impl Background {
         // };
 
         const CELL_SIZE: u32 = 4;
-        const FADE_DIST: u32 = 36;
-        let meta_field = MetaField::new(&gpu.device, &frame_metadata, CELL_SIZE, FADE_DIST);
+        let meta_field = MetaField::new(&gpu.device, &frame_metadata, CELL_SIZE);
 
         let line_segments = LineSegments::new(&gpu.device, &meta_field);
         let quads = Quads::new(&gpu.device, &meta_field);
+
+        let background_svg_renderer = BackgroundSvgRenderer::new(&gpu.device, &frame_metadata);
 
         let grid_processor = GridProcessor::new(
             &gpu.device,
@@ -146,6 +173,17 @@ impl Background {
             gpu.config.format,
         );
 
+        let marching_squares_liquid_quad_renderer = MarchingSquaresLiquidQuadRenderer::new(
+            &gpu.device,
+            &frame_metadata,
+            &quads,
+            &meta_field,
+            &background.create_view(&wgpu::TextureViewDescriptor::default()),
+            gpu.config.format,
+        );
+
+        let surface_blitter = wgpu::util::TextureBlitter::new(&gpu.device, gpu.config.format);
+
         Self {
             gpu,
             background_events,
@@ -153,14 +191,18 @@ impl Background {
             frame_timer,
             mouse,
 
+            background_svg_renderer,
             grid_processor,
             grid_renderer,
             meta_field_processor,
             meta_field_renderer,
             marching_squares_processor,
             marching_squares_shape_renderer,
+            marching_squares_liquid_quad_renderer,
+            surface_blitter,
 
             frame_metadata,
+            background,
             delta_time,
             grid_state,
             grid_metadata,
@@ -215,11 +257,37 @@ impl Background {
         self.frame_metadata
             .update(&self.gpu.queue, self.gpu.config.size(), window.scroll_pos());
 
+        self.background = self.gpu.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Background Texture"),
+            size: wgpu::Extent3d {
+                width: self.frame_metadata.resolution().x,
+                height: self.frame_metadata.resolution().y,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: self.gpu.config.format,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+
         self.grid_metadata
             .update(&self.gpu.queue, &self.frame_metadata);
 
         self.grid_state
             .resize(&self.gpu.device, &self.grid_metadata);
+
+        self.meta_shapes
+            .update_from_panels(window.scroll_pos(), &self.panels);
+
+        self.meta_field
+            .resize(&self.gpu.device, &self.frame_metadata);
+
+        self.background_svg_renderer
+            .resize(&self.gpu.device, &self.frame_metadata);
 
         self.grid_processor.recreate_bind_group(
             &self.gpu.device,
@@ -235,9 +303,6 @@ impl Background {
             &self.grid_metadata,
             &self.grid_state,
         );
-
-        self.meta_field
-            .resize(&self.gpu.device, &self.frame_metadata);
 
         self.meta_field_processor.recreate_bind_group(
             &self.gpu.device,
@@ -261,8 +326,16 @@ impl Background {
             &self.quads,
         );
 
-        self.meta_shapes
-            .update_from_panels(window.scroll_pos(), &self.panels);
+        self.marching_squares_liquid_quad_renderer
+            .recreate_bind_group(
+                &self.gpu.device,
+                &self.frame_metadata,
+                &self.quads,
+                &self.meta_field,
+                &self
+                    .background
+                    .create_view(&wgpu::TextureViewDescriptor::default()),
+            );
     }
 
     fn handle_mouse_move(&mut self, pos: IVec2) {
@@ -288,7 +361,7 @@ impl Background {
 
         self.meta_shapes.balls_mut()[0] = MetaBall {
             position: self.mouse.position(),
-            radius: 48.0,
+            radius: 36.0,
         };
 
         self.meta_shapes.ensure_buffer(&self.gpu.queue);
@@ -299,17 +372,6 @@ impl Background {
     }
 
     fn handle_render(&mut self) {
-        let texture = match self.gpu.surface.get_current_texture() {
-            Ok(texture) => texture,
-            Err(e) => {
-                log::error!("Failed to get current texture: {e:?}");
-                return;
-            }
-        };
-        let view = texture
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-
         let mut encoder = self
             .gpu
             .device
@@ -317,57 +379,102 @@ impl Background {
                 label: Some("Background Command Encoder"),
             });
 
+        // Render to background
         {
-            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("Render Pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(
-                            Theme::current()
-                                .properties()
-                                .get(&ThemePropertyName::Background)
-                                .expect_throw("background color")
-                                .vec4()
-                                .expect_throw("background color vector")
-                                .to_wgpu_color(),
-                        ),
-                        store: wgpu::StoreOp::Store,
-                    },
-                    depth_slice: None,
-                })],
-                depth_stencil_attachment: None,
-                occlusion_query_set: None,
-                timestamp_writes: None,
-            });
+            let view = self
+                .background
+                .create_view(&wgpu::TextureViewDescriptor::default());
+
+            {
+                encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Render Pass"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(
+                                Theme::current()
+                                    .properties()
+                                    .get(&ThemePropertyName::Background)
+                                    .expect_throw("background color")
+                                    .vec4()
+                                    .expect_throw("background color vector")
+                                    .to_wgpu_color(),
+                            ),
+                            store: wgpu::StoreOp::Store,
+                        },
+                        depth_slice: None,
+                    })],
+                    depth_stencil_attachment: None,
+                    occlusion_query_set: None,
+                    timestamp_writes: None,
+                });
+            }
+
+            self.background_svg_renderer.render(
+                &self.gpu.device,
+                &self.gpu.queue,
+                &mut encoder,
+                &self.surface_blitter,
+                &view,
+                &self.frame_metadata,
+            );
+
+            self.grid_processor
+                .process(&mut encoder, self.grid_metadata.resolution());
+
+            self.grid_renderer
+                .render(&mut encoder, &view, self.grid_metadata.resolution());
+
+            self.meta_field_processor
+                .process(&mut encoder, self.meta_field.resolution());
+
+            // self.meta_field_renderer.render(&mut encoder, &view);
+
+            self.marching_squares_processor.process(
+                &self.gpu.queue,
+                &mut encoder,
+                self.meta_field.resolution(),
+            );
+
+            // self.marching_squares_shape_renderer.render(
+            //     &mut encoder,
+            //     &view,
+            //     &self.marching_squares_processor,
+            // );
         }
 
-        self.grid_processor
-            .process(&mut encoder, self.grid_metadata.resolution());
+        // Render to screen
+        {
+            let texture = match self.gpu.surface.get_current_texture() {
+                Ok(texture) => texture,
+                Err(e) => {
+                    log::error!("Failed to get current texture: {e:?}");
+                    return;
+                }
+            };
+            let view = texture
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default());
 
-        self.grid_renderer
-            .render(&mut encoder, &view, self.grid_metadata.resolution());
+            self.surface_blitter.copy(
+                &self.gpu.device,
+                &mut encoder,
+                &self
+                    .background
+                    .create_view(&wgpu::TextureViewDescriptor::default()),
+                &view,
+            );
 
-        self.meta_field_processor
-            .process(&mut encoder, self.meta_field.resolution());
+            self.marching_squares_liquid_quad_renderer.render(
+                &mut encoder,
+                &view,
+                &self.marching_squares_processor,
+            );
 
-        self.meta_field_renderer.render(&mut encoder, &view);
-
-        self.marching_squares_processor.process(
-            &self.gpu.queue,
-            &mut encoder,
-            self.meta_field.resolution(),
-        );
-
-        // self.marching_squares_shape_renderer.render(
-        //     &mut encoder,
-        //     &view,
-        //     &self.marching_squares_processor,
-        // );
-
-        self.gpu.queue.submit(Some(encoder.finish()));
-        texture.present();
+            self.gpu.queue.submit(Some(encoder.finish()));
+            texture.present();
+        }
 
         if let Err(e) = self.gpu.device.poll(wgpu::PollType::Poll) {
             log::error!("Failed to submit commands to GPU: {e}");

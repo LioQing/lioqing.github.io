@@ -1,11 +1,10 @@
 use std::{cell::OnceCell, rc::Rc, sync::mpsc};
 
-use glam::*;
 use wasm_bindgen::prelude::*;
 
 use crate::{
     background::{Background, BackgroundEvent},
-    ext::{CanvasExt as _, HtmlCollectionExt as _, MouseEventExt as _},
+    ext::MouseEventExt as _,
     gpu::Gpu,
     theme::Theme,
 };
@@ -84,6 +83,12 @@ fn main() {
 
             log::debug!("Background initialized");
 
+            document
+                .get_element_by_id("loading-cover")
+                .unwrap_throw()
+                .set_attribute("style", "display: none;")
+                .unwrap_throw();
+
             let update = Rc::<OnceCell<Closure<dyn FnMut()>>>::default();
             update
                 .set(Closure::wrap(Box::new({
@@ -102,10 +107,4 @@ fn main() {
                 .unwrap_throw();
         });
     }
-
-    document
-        .get_element_by_id("loading-cover")
-        .unwrap_throw()
-        .set_attribute("style", "display: none;")
-        .unwrap_throw();
 }

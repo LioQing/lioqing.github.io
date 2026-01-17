@@ -1,6 +1,3 @@
-const width: f32 = 2.0;
-const half_width: f32 = width / 2.0;
-
 struct FrameMetadata {
     resolution: vec2<u32>,
     top_left: vec2<i32>,

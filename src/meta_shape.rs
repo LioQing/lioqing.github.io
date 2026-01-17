@@ -22,7 +22,6 @@ pub struct MetaBall {
 pub struct MetaLine {
     pub start: Vec2,
     pub end: Vec2,
-    pub radius: f32,
 }
 
 #[repr(C)]
@@ -30,7 +29,6 @@ pub struct MetaLine {
 pub struct MetaBox {
     pub min: Vec2,
     pub max: Vec2,
-    pub radius: f32,
 }
 
 #[derive(Debug)]
@@ -141,7 +139,6 @@ impl MetaShapes {
                     + scroll_pos.as_vec2(),
                 max: vec2(rect.right() as f32, rect.bottom() as f32) - Vec2::splat(36.0)
                     + scroll_pos.as_vec2(),
-                radius: 36.0,
             };
         }
     }

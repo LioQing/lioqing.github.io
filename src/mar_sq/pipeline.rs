@@ -2,10 +2,15 @@ use glam::*;
 
 use crate::{
     frame::FrameMetadata,
-    mar_sq::traits::{
-        MarchingSquaresShape, MarchingSquaresShapeBuffer as _, MarchingSquaresShapeIndirect as _,
+    mar_sq::{
+        quad::Quads,
+        traits::{
+            MarchingSquaresShape, MarchingSquaresShapeBuffer as _,
+            MarchingSquaresShapeIndirect as _,
+        },
     },
-    meta_field::MetaField,
+    meta_field::{self, MetaField},
+    pipeline::{FADE_DIST, HEIGHT, MetaFieldMag, MetaFieldRenderer, RADIUS},
 };
 
 #[derive(Debug)]
@@ -222,46 +227,18 @@ impl<Shape: MarchingSquaresShape> MarchingSquaresShapeRenderer<Shape> {
             source: wgpu::ShaderSource::Wgsl(Shape::RENDER_SHADER.into()),
         });
 
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Marching Squares Shape Renderer Bind Group Layout"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: true },
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-            ],
-        });
+        let bind_group_layout = Self::create_bind_group_layout(
+            device,
+            Some("Marching Squares Shape Renderer Bind Group Layout"),
+        );
 
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Marching Squares Shape Renderer Bind Group"),
-            layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: frame_metadata.buffer().as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: shape.buffer().as_entire_binding(),
-                },
-            ],
-        });
+        let bind_group = Self::create_bind_group(
+            device,
+            Some("Marching Squares Shape Renderer Bind Group"),
+            &bind_group_layout,
+            frame_metadata,
+            shape,
+        );
 
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -318,27 +295,20 @@ impl<Shape: MarchingSquaresShape> MarchingSquaresShapeRenderer<Shape> {
         frame_metadata: &FrameMetadata,
         shape: &Shape::Buffer,
     ) {
-        self.bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("Marching Squares Shape Renderer Bind Group"),
-            layout: &self.bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: frame_metadata.buffer().as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: shape.buffer().as_entire_binding(),
-                },
-            ],
-        });
+        self.bind_group = Self::create_bind_group(
+            device,
+            Some("Marching Squares Shape Renderer Bind Group"),
+            &self.bind_group_layout,
+            frame_metadata,
+            shape,
+        );
     }
 
     pub fn render(
         &self,
         encoder: &mut wgpu::CommandEncoder,
         view: &wgpu::TextureView,
-        marching_squres_processor: &MarchingSquaresProcessor<Shape>,
+        marching_squares_processor: &MarchingSquaresProcessor<Shape>,
     ) {
         let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Marching Squares Shape Renderer Render Pass"),
@@ -358,6 +328,300 @@ impl<Shape: MarchingSquaresShape> MarchingSquaresShapeRenderer<Shape> {
 
         render_pass.set_pipeline(&self.render_pipeline);
         render_pass.set_bind_group(0, &self.bind_group, &[]);
-        render_pass.draw_indirect(marching_squres_processor.indirect_buffer.buffer(), 0);
+        render_pass.draw_indirect(marching_squares_processor.indirect_buffer.buffer(), 0);
+    }
+
+    pub fn create_bind_group_layout(
+        device: &wgpu::Device,
+        label: Option<&str>,
+    ) -> wgpu::BindGroupLayout {
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label,
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+            ],
+        })
+    }
+
+    pub fn create_bind_group(
+        device: &wgpu::Device,
+        label: Option<&str>,
+        bind_group_layout: &wgpu::BindGroupLayout,
+        frame_metadata: &FrameMetadata,
+        shape: &Shape::Buffer,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label,
+            layout: bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: frame_metadata.buffer().as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: shape.buffer().as_entire_binding(),
+                },
+            ],
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct MarchingSquaresLiquidQuadRenderer {
+    render_pipeline: wgpu::RenderPipeline,
+    quads_bind_group_layout: wgpu::BindGroupLayout,
+    quads_bind_group: wgpu::BindGroup,
+    meta_field_bind_group_layout: wgpu::BindGroupLayout,
+    meta_field_bind_group: wgpu::BindGroup,
+    background_bind_group_layout: wgpu::BindGroupLayout,
+    background_bind_group: wgpu::BindGroup,
+}
+
+impl MarchingSquaresLiquidQuadRenderer {
+    pub fn new(
+        device: &wgpu::Device,
+        frame_metadata: &FrameMetadata,
+        quads: &Quads,
+        meta_field: &MetaField,
+        background_view: &wgpu::TextureView,
+        texture_format: wgpu::TextureFormat,
+    ) -> Self {
+        let render_shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Marching Squares Liquid Quad Renderer Shader Module"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("../shader/liquid_quad.wgsl").into()),
+        });
+
+        let quads_bind_group_layout =
+            MarchingSquaresShapeRenderer::<Quads>::create_bind_group_layout(
+                device,
+                Some("Marching Squares Liquid Quad Renderer Quads Bind Group Layout"),
+            );
+
+        let quads_bind_group = MarchingSquaresShapeRenderer::<Quads>::create_bind_group(
+            device,
+            Some("Marching Squares Liquid Quad Renderer Quads Bind Group"),
+            &quads_bind_group_layout,
+            frame_metadata,
+            quads,
+        );
+
+        let meta_field_bind_group_layout =
+            MetaFieldRenderer::<MetaFieldMag>::create_bind_group_layout(
+                device,
+                Some("Marching Squares Liquid Quad Renderer Meta Field Bind Group Layout"),
+            );
+
+        let meta_field_bind_group = MetaFieldRenderer::<MetaFieldMag>::create_bind_group(
+            device,
+            Some("Marching Squares Liquid Quad Renderer Meta Field Bind Group"),
+            &meta_field_bind_group_layout,
+            meta_field,
+        );
+
+        let background_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Marching Squares Liquid Quad Renderer Background Bind Group Layout"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+            });
+
+        let background_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Marching Squares Liquid Quad Renderer Background Bind Group"),
+            layout: &background_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(background_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&device.create_sampler(
+                        &wgpu::SamplerDescriptor {
+                            label: Some("Background Sampler"),
+                            mag_filter: wgpu::FilterMode::Linear,
+                            min_filter: wgpu::FilterMode::Linear,
+                            mipmap_filter: wgpu::FilterMode::Linear,
+                            ..Default::default()
+                        },
+                    )),
+                },
+            ],
+        });
+
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Marching Squares Liquid Quad Renderer Pipeline Layout"),
+                bind_group_layouts: &[
+                    &quads_bind_group_layout,
+                    &meta_field_bind_group_layout,
+                    &background_bind_group_layout,
+                ],
+                push_constant_ranges: &[],
+            });
+
+        let compilation_options = wgpu::PipelineCompilationOptions {
+            constants: &[
+                ("radius", RADIUS),
+                ("fade_dist", FADE_DIST),
+                ("height", HEIGHT),
+            ],
+            ..Default::default()
+        };
+
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Marching Squares Liquid Quad Renderer Render Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &render_shader_module,
+                entry_point: Some("vert_main"),
+                buffers: &[],
+                compilation_options: compilation_options.clone(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &render_shader_module,
+                entry_point: Some("frag_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: texture_format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options,
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleStrip,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Back),
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        Self {
+            render_pipeline,
+            quads_bind_group_layout,
+            quads_bind_group,
+            meta_field_bind_group_layout,
+            meta_field_bind_group,
+            background_bind_group_layout,
+            background_bind_group,
+        }
+    }
+
+    pub fn recreate_bind_group(
+        &mut self,
+        device: &wgpu::Device,
+        frame_metadata: &FrameMetadata,
+        quads: &Quads,
+        meta_field: &MetaField,
+        background_view: &wgpu::TextureView,
+    ) {
+        self.quads_bind_group = MarchingSquaresShapeRenderer::<Quads>::create_bind_group(
+            device,
+            Some("Marching Squares Liquid Quad Renderer Quads Bind Group"),
+            &self.quads_bind_group_layout,
+            frame_metadata,
+            quads,
+        );
+
+        self.meta_field_bind_group = MetaFieldRenderer::<MetaFieldMag>::create_bind_group(
+            device,
+            Some("Marching Squares Liquid Quad Renderer Meta Field Bind Group"),
+            &self.meta_field_bind_group_layout,
+            meta_field,
+        );
+
+        self.background_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Marching Squares Liquid Quad Renderer Background Bind Group"),
+            layout: &self.background_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(background_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&device.create_sampler(
+                        &wgpu::SamplerDescriptor {
+                            label: Some("Background Sampler"),
+                            mag_filter: wgpu::FilterMode::Linear,
+                            min_filter: wgpu::FilterMode::Linear,
+                            mipmap_filter: wgpu::FilterMode::Linear,
+                            ..Default::default()
+                        },
+                    )),
+                },
+            ],
+        });
+    }
+
+    pub fn render(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+        marching_squares_processor: &MarchingSquaresProcessor<Quads>,
+    ) {
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Marching Squares Liquid Quad Renderer Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Load,
+                    store: wgpu::StoreOp::Store,
+                },
+                depth_slice: None,
+            })],
+            depth_stencil_attachment: None,
+            occlusion_query_set: None,
+            timestamp_writes: None,
+        });
+
+        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(0, &self.quads_bind_group, &[]);
+        render_pass.set_bind_group(1, &self.meta_field_bind_group, &[]);
+        render_pass.set_bind_group(2, &self.background_bind_group, &[]);
+        render_pass.draw_indirect(marching_squares_processor.indirect_buffer.buffer(), 0);
     }
 }
