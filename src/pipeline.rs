@@ -1,12 +1,14 @@
 use glam::*;
 use vello_svg::vello;
 use wasm_bindgen::UnwrapThrowExt;
+use wgpu::util::DeviceExt as _;
 
+use crate::texture_blitter::TextureBlitter;
 use crate::{frame::FrameMetadata, meta_field::MetaField, meta_shape::MetaShapes};
 
 pub const RADIUS: f64 = 36.0;
 pub const FADE_DIST: f64 = 32.0;
-pub const HEIGHT: f64 = 24.0;
+pub const HEIGHT: f64 = 36.0;
 
 #[derive(Debug)]
 pub struct MetaFieldProcessor {
@@ -400,11 +402,16 @@ impl<T: MetaFieldRenderType> MetaFieldRenderer<T> {
 pub struct BackgroundSvgRenderer {
     scene: vello::Scene,
     renderer: vello::Renderer,
+    background_blitter: TextureBlitter,
     intermediate_texture: wgpu::Texture,
 }
 
 impl BackgroundSvgRenderer {
-    pub fn new(device: &wgpu::Device, frame_metadata: &FrameMetadata) -> Self {
+    pub fn new(
+        device: &wgpu::Device,
+        frame_metadata: &FrameMetadata,
+        texture_format: wgpu::TextureFormat,
+    ) -> Self {
         let scene =
             vello_svg::render(include_str!("../assets/test.svg")).expect_throw("background svg");
 
@@ -434,9 +441,12 @@ impl BackgroundSvgRenderer {
             view_formats: &[],
         });
 
+        let background_blitter = TextureBlitter::new(device, texture_format);
+
         Self {
             scene,
             renderer,
+            background_blitter,
             intermediate_texture,
         }
     }
@@ -463,7 +473,6 @@ impl BackgroundSvgRenderer {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
-        surface_blitter: &wgpu::util::TextureBlitter,
         background_view: &wgpu::TextureView,
         frame_metadata: &FrameMetadata,
     ) {
@@ -484,13 +493,281 @@ impl BackgroundSvgRenderer {
             log::error!("Failed to render background SVG: {e}");
         }
 
-        surface_blitter.copy(
+        self.background_blitter.copy(
             device,
+            queue,
             encoder,
             &self
                 .intermediate_texture
                 .create_view(&wgpu::TextureViewDescriptor::default()),
             background_view,
+            frame_metadata,
+            IVec2::new(0, frame_metadata.resolution().y as i32)
+                - (frame_metadata.top_left().as_vec2() * 0.5).as_ivec2(),
         );
+    }
+}
+
+pub struct GaussianBlurPipeline {
+    render_pipeline: wgpu::RenderPipeline,
+    bind_group_layout: wgpu::BindGroupLayout,
+    sampler: wgpu::Sampler,
+    params_buffer: wgpu::Buffer,
+    ping_texture: wgpu::Texture,
+    ping_view: wgpu::TextureView,
+    pong_texture: wgpu::Texture,
+    pong_view: wgpu::TextureView,
+    texture_format: wgpu::TextureFormat,
+}
+
+impl GaussianBlurPipeline {
+    pub fn new(
+        device: &wgpu::Device,
+        frame_metadata: &FrameMetadata,
+        texture_format: wgpu::TextureFormat,
+    ) -> Self {
+        let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("Gaussian Blur Shader Module"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("shader/gaussian_blur.wgsl").into()),
+        });
+
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Gaussian Blur Bind Group Layout"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+            ],
+        });
+
+        let render_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("Gaussian Blur Pipeline Layout"),
+                bind_group_layouts: &[&bind_group_layout],
+                push_constant_ranges: &[],
+            });
+
+        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Gaussian Blur Render Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader_module,
+                entry_point: Some("vert_main"),
+                buffers: &[],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader_module,
+                entry_point: Some("frag_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: texture_format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: None,
+                polygon_mode: wgpu::PolygonMode::Fill,
+                unclipped_depth: false,
+                conservative: false,
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("Gaussian Blur Sampler"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        let params_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Gaussian Blur Params Buffer"),
+            contents: bytemuck::bytes_of(&Vec4::new(1.0, 0.0, 0.0, 0.0)),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let (ping_texture, ping_view) = Self::create_target_texture(
+            device,
+            frame_metadata,
+            texture_format,
+            "Gaussian Blur Ping Texture",
+        );
+
+        let (pong_texture, pong_view) = Self::create_target_texture(
+            device,
+            frame_metadata,
+            texture_format,
+            "Gaussian Blur Pong Texture",
+        );
+
+        Self {
+            render_pipeline,
+            bind_group_layout,
+            sampler,
+            params_buffer,
+            ping_texture,
+            ping_view,
+            pong_texture,
+            pong_view,
+            texture_format,
+        }
+    }
+
+    pub fn resize(&mut self, device: &wgpu::Device, frame_metadata: &FrameMetadata) {
+        let (ping_texture, ping_view) = Self::create_target_texture(
+            device,
+            frame_metadata,
+            self.texture_format,
+            "Gaussian Blur Ping Texture",
+        );
+        let (pong_texture, pong_view) = Self::create_target_texture(
+            device,
+            frame_metadata,
+            self.texture_format,
+            "Gaussian Blur Pong Texture",
+        );
+
+        self.ping_texture = ping_texture;
+        self.ping_view = ping_view;
+        self.pong_texture = pong_texture;
+        self.pong_view = pong_view;
+    }
+
+    pub fn blur(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+        input_view: &wgpu::TextureView,
+    ) {
+        self.run_pass(
+            device,
+            queue,
+            encoder,
+            input_view,
+            &self.ping_view,
+            Vec2::new(1.0, 0.0),
+        );
+        self.run_pass(
+            device,
+            queue,
+            encoder,
+            &self.ping_view,
+            &self.pong_view,
+            Vec2::new(0.0, 1.0),
+        );
+    }
+
+    pub fn output_view(&self) -> &wgpu::TextureView {
+        &self.pong_view
+    }
+
+    fn run_pass(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+        src_view: &wgpu::TextureView,
+        dst_view: &wgpu::TextureView,
+        direction: Vec2,
+    ) {
+        let params = Vec4::new(direction.x, direction.y, 0.0, 0.0);
+        queue.write_buffer(&self.params_buffer, 0, bytemuck::bytes_of(&params));
+
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Gaussian Blur Bind Group"),
+            layout: &self.bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(src_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: self.params_buffer.as_entire_binding(),
+                },
+            ],
+        });
+
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("Gaussian Blur Render Pass"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: dst_view,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
+                    store: wgpu::StoreOp::Store,
+                },
+                depth_slice: None,
+            })],
+            depth_stencil_attachment: None,
+            occlusion_query_set: None,
+            timestamp_writes: None,
+        });
+
+        render_pass.set_pipeline(&self.render_pipeline);
+        render_pass.set_bind_group(0, &bind_group, &[]);
+        render_pass.draw(0..3, 0..1);
+    }
+
+    fn create_target_texture(
+        device: &wgpu::Device,
+        frame_metadata: &FrameMetadata,
+        texture_format: wgpu::TextureFormat,
+        label: &str,
+    ) -> (wgpu::Texture, wgpu::TextureView) {
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size: wgpu::Extent3d {
+                width: frame_metadata.resolution().x,
+                height: frame_metadata.resolution().y,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: texture_format,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        (texture, view)
     }
 }

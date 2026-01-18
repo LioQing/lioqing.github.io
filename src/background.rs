@@ -25,11 +25,13 @@ use crate::{
         quad::Quads,
     },
     meta_field::MetaField,
-    meta_shape::{MetaBall, MetaBox, MetaLine, MetaShapes},
+    meta_shape::{MetaBall, MetaShapes},
     mouse::Mouse,
     pipeline::{
-        BackgroundSvgRenderer, MetaFieldGrad, MetaFieldMag, MetaFieldProcessor, MetaFieldRenderer,
+        BackgroundSvgRenderer, GaussianBlurPipeline, MetaFieldGrad, MetaFieldMag,
+        MetaFieldProcessor, MetaFieldRenderer,
     },
+    texture_blitter::TextureBlitter,
     theme::{Theme, ThemePropertyName},
 };
 
@@ -46,10 +48,12 @@ pub struct Background {
     background_events: mpsc::Receiver<BackgroundEvent>,
     panels: Vec<web_sys::HtmlElement>,
     frame_timer: web_time::Instant,
+    fps_display_counter: u32,
     mouse: Mouse,
 
     // Pipelines
     background_svg_renderer: BackgroundSvgRenderer,
+    blur: GaussianBlurPipeline,
     grid_processor: GridProcessor,
     grid_renderer: GridRenderer,
     meta_field_processor: MetaFieldProcessor,
@@ -57,7 +61,7 @@ pub struct Background {
     marching_squares_processor: MarchingSquaresProcessor<Quads>,
     marching_squares_shape_renderer: MarchingSquaresShapeRenderer<Quads>,
     marching_squares_liquid_quad_renderer: MarchingSquaresLiquidQuadRenderer,
-    surface_blitter: wgpu::util::TextureBlitter,
+    surface_blitter: TextureBlitter,
 
     // Data
     frame_metadata: FrameMetadata,
@@ -138,7 +142,10 @@ impl Background {
         let line_segments = LineSegments::new(&gpu.device, &meta_field);
         let quads = Quads::new(&gpu.device, &meta_field);
 
-        let background_svg_renderer = BackgroundSvgRenderer::new(&gpu.device, &frame_metadata);
+        let background_svg_renderer =
+            BackgroundSvgRenderer::new(&gpu.device, &frame_metadata, gpu.config.format);
+
+        let blur = GaussianBlurPipeline::new(&gpu.device, &frame_metadata, gpu.config.format);
 
         let grid_processor = GridProcessor::new(
             &gpu.device,
@@ -178,20 +185,29 @@ impl Background {
             &frame_metadata,
             &quads,
             &meta_field,
-            &background.create_view(&wgpu::TextureViewDescriptor::default()),
+            blur.output_view(),
+            Theme::current()
+                .properties()
+                .get(&ThemePropertyName::Background)
+                .expect_throw("background color")
+                .vec4()
+                .expect("background color vector")
+                .xyz(),
             gpu.config.format,
         );
 
-        let surface_blitter = wgpu::util::TextureBlitter::new(&gpu.device, gpu.config.format);
+        let surface_blitter = TextureBlitter::new(&gpu.device, gpu.config.format);
 
         Self {
             gpu,
             background_events,
             panels,
             frame_timer,
+            fps_display_counter: 0,
             mouse,
 
             background_svg_renderer,
+            blur,
             grid_processor,
             grid_renderer,
             meta_field_processor,
@@ -221,6 +237,14 @@ impl Background {
         self.handle_update(delta_time);
         if self.should_render() {
             self.handle_render();
+        }
+
+        // FPS display
+        self.fps_display_counter += 1;
+        if self.fps_display_counter >= 60 {
+            let fps = 1.0 / delta_time;
+            web_sys::console::log_1(&format!("Background FPS: {:.2}", fps).into());
+            self.fps_display_counter = 0;
         }
     }
 
@@ -289,6 +313,8 @@ impl Background {
         self.background_svg_renderer
             .resize(&self.gpu.device, &self.frame_metadata);
 
+        self.blur.resize(&self.gpu.device, &self.frame_metadata);
+
         self.grid_processor.recreate_bind_group(
             &self.gpu.device,
             &self.frame_metadata,
@@ -332,9 +358,7 @@ impl Background {
                 &self.frame_metadata,
                 &self.quads,
                 &self.meta_field,
-                &self
-                    .background
-                    .create_view(&wgpu::TextureViewDescriptor::default()),
+                self.blur.output_view(),
             );
     }
 
@@ -415,7 +439,6 @@ impl Background {
                 &self.gpu.device,
                 &self.gpu.queue,
                 &mut encoder,
-                &self.surface_blitter,
                 &view,
                 &self.frame_metadata,
             );
@@ -435,6 +458,15 @@ impl Background {
                 &self.gpu.queue,
                 &mut encoder,
                 self.meta_field.resolution(),
+            );
+
+            self.blur.blur(
+                &self.gpu.device,
+                &self.gpu.queue,
+                &mut encoder,
+                &self
+                    .background
+                    .create_view(&wgpu::TextureViewDescriptor::default()),
             );
 
             // self.marching_squares_shape_renderer.render(
@@ -457,13 +489,15 @@ impl Background {
                 .texture
                 .create_view(&wgpu::TextureViewDescriptor::default());
 
-            self.surface_blitter.copy(
+            self.surface_blitter.copy_full(
                 &self.gpu.device,
+                &self.gpu.queue,
                 &mut encoder,
                 &self
                     .background
                     .create_view(&wgpu::TextureViewDescriptor::default()),
                 &view,
+                &self.frame_metadata,
             );
 
             self.marching_squares_liquid_quad_renderer.render(

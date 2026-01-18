@@ -28,10 +28,11 @@ fn vert_main(@builtin(vertex_index) vert_index: u32) -> @builtin(position) vec4<
 @fragment
 fn frag_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
     let meta_field_coord = (frag_coord.xy + 0.5 - vec2<f32>(metadata.offset)) / f32(metadata.cell_size);
-    let mag = normalize_meta_mag(load_meta_mag_bilinear(meta_field_coord));
+    let mag = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord));
     let rgb = select(
-        vec3<f32>(mag + 1.0),
+        vec3<f32>(mag),
         hsl_to_rgb(vec3<f32>(mag / height, 1.0, 0.25)),
+        // vec3<f32>(mag / height),
         mag > 0.0,
     );
 
@@ -42,6 +43,12 @@ fn hsl_to_rgb(hsl: vec3<f32>) -> vec3<f32> {
    let c = vec3<f32>(fract(hsl.x), clamp(vec2<f32>(hsl.y, hsl.z), vec2<f32>(0.0), vec2<f32>(1.0)));
    let rgb = clamp(abs((c.x * 6.0 + vec3<f32>(0.0, 4.0, 2.0)) % 6.0 - 3.0) - 1.0, vec3<f32>(0.0), vec3<f32>(1.0));
    return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
+}
+
+fn edge_meta_mag(mag: f32) -> f32 {
+    let inverted = invert_meta_mag(mag);
+    let edge = radius - inverted;
+    return edge;
 }
 
 fn invert_meta_mag(mag: f32) -> f32 {
@@ -60,14 +67,14 @@ fn rounded_plateau(x: f32) -> f32 {
     return segment * (1.0 - x / height) + x;
 }
 
-fn normalize_meta_mag(mag: f32) -> f32 {
+fn shape_meta_mag(mag: f32) -> f32 {
     if mag < 1.0 {
-        return -1e4;
+        return 0.0;
     }
 
-    let inverted = invert_meta_mag(mag);
-    let edge = radius - inverted;
-    return rounded_plateau(edge);
+    let edge = edge_meta_mag(mag);
+    let plateau = rounded_plateau(edge);
+    return plateau;
 }
 
 fn load_meta_mag(coord: vec2<i32>) -> f32 {

@@ -1,4 +1,5 @@
 use glam::*;
+use wgpu::util::DeviceExt as _;
 
 use crate::{
     frame::FrameMetadata,
@@ -395,6 +396,7 @@ pub struct MarchingSquaresLiquidQuadRenderer {
     meta_field_bind_group: wgpu::BindGroup,
     background_bind_group_layout: wgpu::BindGroupLayout,
     background_bind_group: wgpu::BindGroup,
+    background_color: wgpu::Buffer,
 }
 
 impl MarchingSquaresLiquidQuadRenderer {
@@ -404,8 +406,15 @@ impl MarchingSquaresLiquidQuadRenderer {
         quads: &Quads,
         meta_field: &MetaField,
         background_view: &wgpu::TextureView,
+        background_color: Vec3,
         texture_format: wgpu::TextureFormat,
     ) -> Self {
+        let background_color = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Marching Squares Liquid Quad Renderer Background Color Buffer"),
+            contents: bytemuck::bytes_of(&background_color),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
         let render_shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Marching Squares Liquid Quad Renderer Shader Module"),
             source: wgpu::ShaderSource::Wgsl(include_str!("../shader/liquid_quad.wgsl").into()),
@@ -458,6 +467,16 @@ impl MarchingSquaresLiquidQuadRenderer {
                         ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                         count: None,
                     },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    },
                 ],
             });
 
@@ -480,6 +499,12 @@ impl MarchingSquaresLiquidQuadRenderer {
                             ..Default::default()
                         },
                     )),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Buffer(
+                        background_color.as_entire_buffer_binding(),
+                    ),
                 },
             ],
         });
@@ -546,6 +571,7 @@ impl MarchingSquaresLiquidQuadRenderer {
             meta_field_bind_group,
             background_bind_group_layout,
             background_bind_group,
+            background_color,
         }
     }
 
@@ -591,6 +617,12 @@ impl MarchingSquaresLiquidQuadRenderer {
                             ..Default::default()
                         },
                     )),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Buffer(
+                        self.background_color.as_entire_buffer_binding(),
+                    ),
                 },
             ],
         });

@@ -22,6 +22,7 @@ mod meta_field;
 mod meta_shape;
 mod mouse;
 mod pipeline;
+mod texture_blitter;
 mod theme;
 
 #[macro_export]
