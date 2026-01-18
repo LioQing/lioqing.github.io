@@ -10,6 +10,7 @@ use crate::{
 };
 
 mod background;
+mod controller;
 mod delta_time;
 mod event_listeners;
 mod ext;

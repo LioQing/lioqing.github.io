@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
@@ -214,6 +214,11 @@
         /* -webkit-backdrop-filter: blur(12px); */
       }
 
+      .interactive-panel:hover {
+        padding: 8px;
+        margin: -8px;
+      }
+
       .about-me {
         max-width: 500px;
         min-width: 300px;
@@ -239,19 +244,6 @@
 
       .about-me-profile > div {
         aspect-ratio: 1 / 1;
-        transition: transform 0.2s ease-in-out;
-      }
-
-      .about-me-profile > div:hover {
-        transform-origin: center;
-        transform: scale(1.05);
-        transition: transform 0.2s ease-in-out;
-      }
-
-      .about-me-profile > div:active {
-        transform-origin: center;
-        transform: scale(0.95);
-        transition: transform 0.1s ease-in-out;
       }
 
       .about-me-profile-content {
@@ -451,7 +443,7 @@
               align-items: center;
             "
           >
-            <div class="panel tilting-container about-me">
+            <div class="panel interactive-panel tilting-container about-me">
               <div class="tilting about-me-content">
                 <h3>
                   I am from
@@ -471,7 +463,7 @@
                 />
               </div>
             </div>
-            <div class="panel tilting-container about-me">
+            <div class="panel interactive-panel tilting-container about-me">
               <div class="tilting about-me-content">
                 <h3>
                   I work as a Software Engineer at
@@ -502,7 +494,7 @@
               align-items: center;
             "
           >
-            <div class="panel tilting-container about-me">
+            <div class="panel interactive-panel tilting-container about-me">
               <div class="tilting about-me-content">
                 <h3>
                   I graduated with BEng(CompSc) from
@@ -532,7 +524,7 @@
                 "
               >
                 <div
-                  class="panel tilting-container"
+                  class="panel interactive-panel tilting-container"
                   style="width: 100%; height: calc(50% - 0.75em)"
                 >
                   <div class="tilting about-me-content">
@@ -548,7 +540,7 @@
                   "
                 >
                   <div class="about-me-profile">
-                    <div class="panel tilting-container">
+                    <div class="panel interactive-panel tilting-container">
                       <a
                         href="https://www.linkedin.com/in/lioqyz/"
                         target="_blank"
@@ -567,7 +559,7 @@
                     </div>
                   </div>
                   <div class="about-me-profile">
-                    <div class="panel tilting-container">
+                    <div class="panel interactive-panel tilting-container">
                       <a
                         href="https://github.com/lioqing/"
                         target="_blank"

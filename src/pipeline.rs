@@ -3,11 +3,12 @@ use vello_svg::vello;
 use wasm_bindgen::UnwrapThrowExt;
 use wgpu::util::DeviceExt as _;
 
+use crate::mouse::Mouse;
 use crate::texture_blitter::TextureBlitter;
 use crate::{frame::FrameMetadata, meta_field::MetaField, meta_shape::MetaShapes};
 
 pub const RADIUS: f64 = 36.0;
-pub const FADE_DIST: f64 = 32.0;
+pub const FADE_DIST: f64 = 24.0;
 pub const HEIGHT: f64 = 36.0;
 
 #[derive(Debug)]
@@ -475,6 +476,7 @@ impl BackgroundSvgRenderer {
         encoder: &mut wgpu::CommandEncoder,
         background_view: &wgpu::TextureView,
         frame_metadata: &FrameMetadata,
+        mosue: &Mouse,
     ) {
         if let Err(e) = self.renderer.render_to_texture(
             device,
@@ -493,6 +495,11 @@ impl BackgroundSvgRenderer {
             log::error!("Failed to render background SVG: {e}");
         }
 
+        // TODO: This is a temporary position for this test svg
+        let init_pos = IVec2::new(0, frame_metadata.resolution().y as i32);
+        let parallax_offset = -(frame_metadata.top_left().as_vec2() * 0.5).as_ivec2();
+        let mouse_offset = ((mosue.position() - frame_metadata.center()) * 0.01).as_ivec2();
+
         self.background_blitter.copy(
             device,
             queue,
@@ -502,8 +509,7 @@ impl BackgroundSvgRenderer {
                 .create_view(&wgpu::TextureViewDescriptor::default()),
             background_view,
             frame_metadata,
-            IVec2::new(0, frame_metadata.resolution().y as i32)
-                - (frame_metadata.top_left().as_vec2() * 0.5).as_ivec2(),
+            init_pos + parallax_offset + mouse_offset,
         );
     }
 }
@@ -512,7 +518,8 @@ pub struct GaussianBlurPipeline {
     render_pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
     sampler: wgpu::Sampler,
-    params_buffer: wgpu::Buffer,
+    params_buffer_x: wgpu::Buffer,
+    params_buffer_y: wgpu::Buffer,
     ping_texture: wgpu::Texture,
     ping_view: wgpu::TextureView,
     pong_texture: wgpu::Texture,
@@ -612,10 +619,16 @@ impl GaussianBlurPipeline {
             ..Default::default()
         });
 
-        let params_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Gaussian Blur Params Buffer"),
+        let params_buffer_x = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Gaussian Blur Params Buffer X"),
             contents: bytemuck::bytes_of(&Vec4::new(1.0, 0.0, 0.0, 0.0)),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
+
+        let params_buffer_y = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Gaussian Blur Params Buffer Y"),
+            contents: bytemuck::bytes_of(&Vec4::new(0.0, 1.0, 0.0, 0.0)),
+            usage: wgpu::BufferUsages::UNIFORM,
         });
 
         let (ping_texture, ping_view) = Self::create_target_texture(
@@ -636,7 +649,8 @@ impl GaussianBlurPipeline {
             render_pipeline,
             bind_group_layout,
             sampler,
-            params_buffer,
+            params_buffer_x,
+            params_buffer_y,
             ping_texture,
             ping_view,
             pong_texture,
@@ -668,13 +682,12 @@ impl GaussianBlurPipeline {
     pub fn blur(
         &mut self,
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        _queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         input_view: &wgpu::TextureView,
     ) {
         self.run_pass(
             device,
-            queue,
             encoder,
             input_view,
             &self.ping_view,
@@ -682,7 +695,6 @@ impl GaussianBlurPipeline {
         );
         self.run_pass(
             device,
-            queue,
             encoder,
             &self.ping_view,
             &self.pong_view,
@@ -697,14 +709,16 @@ impl GaussianBlurPipeline {
     fn run_pass(
         &self,
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
         encoder: &mut wgpu::CommandEncoder,
         src_view: &wgpu::TextureView,
         dst_view: &wgpu::TextureView,
         direction: Vec2,
     ) {
-        let params = Vec4::new(direction.x, direction.y, 0.0, 0.0);
-        queue.write_buffer(&self.params_buffer, 0, bytemuck::bytes_of(&params));
+        let params_buffer = if direction.x.abs() > direction.y.abs() {
+            &self.params_buffer_x
+        } else {
+            &self.params_buffer_y
+        };
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Gaussian Blur Bind Group"),
@@ -720,7 +734,7 @@ impl GaussianBlurPipeline {
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: self.params_buffer.as_entire_binding(),
+                    resource: params_buffer.as_entire_binding(),
                 },
             ],
         });

@@ -58,4 +58,8 @@ impl FrameMetadata {
     pub fn buffer(&self) -> &wgpu::Buffer {
         &self.buffer
     }
+
+    pub fn center(&self) -> Vec2 {
+        self.top_left.as_vec2() + self.resolution.as_vec2() * 0.5
+    }
 }

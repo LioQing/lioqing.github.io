@@ -6,6 +6,7 @@ use strum::IntoDiscriminant;
 use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
 
 use crate::{
+    controller::PanelController,
     delta_time::DeltaTime,
     ext::{
         CanvasExt as _, HtmlCollectionExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt,
@@ -46,7 +47,6 @@ pub enum BackgroundEvent {
 pub struct Background {
     gpu: Gpu,
     background_events: mpsc::Receiver<BackgroundEvent>,
-    panels: Vec<web_sys::HtmlElement>,
     frame_timer: web_time::Instant,
     fps_display_counter: u32,
     mouse: Mouse,
@@ -73,6 +73,9 @@ pub struct Background {
     meta_field: MetaField,
     line_segments: LineSegments,
     quads: Quads,
+
+    // Controller
+    panel_controller: PanelController,
 }
 
 impl Background {
@@ -119,7 +122,6 @@ impl Background {
 
         let mut meta_shapes = MetaShapes::new(&gpu.device, 1, 0, panels.len());
 
-        meta_shapes.update_from_panels(window.scroll_pos(), &panels);
         // let mut meta_shapes = MetaShapes::new(&gpu.device, 2, 1, 1);
         // meta_shapes.balls_mut()[1] = MetaBall {
         //     position: vec2(200.0, 200.0),
@@ -198,10 +200,12 @@ impl Background {
 
         let surface_blitter = TextureBlitter::new(&gpu.device, gpu.config.format);
 
+        let mut panel_controller = PanelController::new(panels, window.scroll_pos());
+        panel_controller.resize(&mut meta_shapes, window.scroll_pos());
+
         Self {
             gpu,
             background_events,
-            panels,
             frame_timer,
             fps_display_counter: 0,
             mouse,
@@ -226,6 +230,8 @@ impl Background {
             meta_field,
             line_segments,
             quads,
+
+            panel_controller,
         }
     }
 
@@ -304,8 +310,8 @@ impl Background {
         self.grid_state
             .resize(&self.gpu.device, &self.grid_metadata);
 
-        self.meta_shapes
-            .update_from_panels(window.scroll_pos(), &self.panels);
+        self.panel_controller
+            .resize(&mut self.meta_shapes, window.scroll_pos());
 
         self.meta_field
             .resize(&self.gpu.device, &self.frame_metadata);
@@ -379,15 +385,19 @@ impl Background {
         self.grid_processor.update_target(
             &self.gpu.queue,
             &self.frame_metadata,
-            self.mouse.position(),
+            &self.mouse,
             delta_time,
         );
+
+        self.panel_controller
+            .update(&mut self.meta_shapes, window.scroll_pos(), delta_time);
 
         self.meta_shapes.balls_mut()[0] = MetaBall {
             position: self.mouse.position(),
             radius: 36.0,
         };
 
+        // TODO: Update only if needed
         self.meta_shapes.ensure_buffer(&self.gpu.queue);
     }
 
@@ -441,6 +451,7 @@ impl Background {
                 &mut encoder,
                 &view,
                 &self.frame_metadata,
+                &self.mouse,
             );
 
             self.grid_processor

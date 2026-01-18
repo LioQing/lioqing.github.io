@@ -43,6 +43,7 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     let cell_pos = vec2<i32>(id.xy) * i32(metadata.cell_size) + metadata.offset + frame_metadata.top_left;
 
     var accum = 0.0;
+
     for (var i = 0u; i < meta_shapes.metadata.ball_count; i += 1u) {
         let ball_offset = i * 3u;
         let center = vec2<f32>(

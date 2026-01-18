@@ -4,6 +4,7 @@ use crate::{
     delta_time::{self, DeltaTime},
     frame::FrameMetadata,
     grid::{GRID_CELL_SIZE, GridMetadata, GridState, target::Target},
+    mouse::Mouse,
 };
 
 #[derive(Debug)]
@@ -222,12 +223,12 @@ impl GridProcessor {
         &mut self,
         queue: &wgpu::Queue,
         frame_metadata: &FrameMetadata,
-        mouse: Vec2,
+        mouse: &Mouse,
         delta_time: f32,
     ) {
         self.target.update(
             queue,
-            mouse - frame_metadata.top_left().as_vec2(),
+            mouse.position() - frame_metadata.top_left().as_vec2(),
             delta_time,
         );
     }
