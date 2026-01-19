@@ -8,13 +8,9 @@ var<uniform> metadata: MetaFieldMetadata;
 @group(0) @binding(1)
 var meta_field_texture: texture_2d<f32>;
 
-override radius: f32;
+override base_radius: f32;
 override fade_dist: f32;
-override height: f32;
-
-override radius_sq: f32 = radius * radius;
-override fade_dist_sq: f32 = fade_dist * fade_dist;
-override height_sq: f32 = height * height;
+override base_height: f32;
 
 @vertex
 fn vert_main(@builtin(vertex_index) vert_index: u32) -> @builtin(position) vec4<f32> {
@@ -29,36 +25,34 @@ fn vert_main(@builtin(vertex_index) vert_index: u32) -> @builtin(position) vec4<
 fn frag_main(@builtin(position) frag_coord: vec4<f32>) -> @location(0) vec4<f32> {
     let meta_field_coord = (frag_coord.xy + 0.5 - vec2<f32>(metadata.offset)) / f32(metadata.cell_size);
 
-    let mag_tl = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, -1.0)));
-    let mag_tp = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(0.0, -1.0)));
-    let mag_tr = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, -1.0)));
-    let mag_lf = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, 0.0)));
-    let mag_rg = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, 0.0)));
-    let mag_bl = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(-1.0, 1.0)));
-    let mag_bm = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(0.0, 1.0)));
-    let mag_br = shape_meta_mag(load_meta_mag_bilinear(meta_field_coord + vec2<f32>(1.0, 1.0)));
+    let mag_tl = load_shaped_meta_mag(meta_field_coord + vec2<f32>(-1.0, -1.0));
+    let mag_tp = load_shaped_meta_mag(meta_field_coord + vec2<f32>(0.0, -1.0));
+    let mag_tr = load_shaped_meta_mag(meta_field_coord + vec2<f32>(1.0, -1.0));
+    let mag_lf = load_shaped_meta_mag(meta_field_coord + vec2<f32>(-1.0, 0.0));
+    let mag_rg = load_shaped_meta_mag(meta_field_coord + vec2<f32>(1.0, 0.0));
+    let mag_bl = load_shaped_meta_mag(meta_field_coord + vec2<f32>(-1.0, 1.0));
+    let mag_bm = load_shaped_meta_mag(meta_field_coord + vec2<f32>(0.0, 1.0));
+    let mag_br = load_shaped_meta_mag(meta_field_coord + vec2<f32>(1.0, 1.0));
 
     let grad_dir_unnormalized = vec2<f32>(
-        (mag_tr + 2.0 * mag_rg + mag_br) - (mag_tl + 2.0 * mag_lf + mag_bl),
-        (mag_bl + 2.0 * mag_bm + mag_br) - (mag_tl + 2.0 * mag_tp + mag_tr),
-    );
+        (mag_tr.x + 2.0 * mag_rg.x + mag_br.x) - (mag_tl.x + 2.0 * mag_lf.x + mag_bl.x),
+        (mag_bl.x + 2.0 * mag_bm.x + mag_br.x) - (mag_tl.x + 2.0 * mag_tp.x + mag_tr.x),
+    ) / (4.0 * 2.0 * f32(metadata.cell_size));
     let grad_dir = select(
         vec2<f32>(0.0),
         normalize(grad_dir_unnormalized),
         grad_dir_unnormalized != vec2<f32>(0.0),
     );
 
-    // TODO: Right now only the magnitude of the gradient is computed analytically,
-    // maybe at some point we can output vec2 from `meta_field_processs` to the texture
-    // so that we can differentiate both direction and magnitude numerically.
-    let grad_mag = differentiate_meta_mag(load_meta_mag_bilinear(meta_field_coord));
+    let meta_mag = load_meta_mag_bilinear(meta_field_coord);
+    let grad_mag = differentiate_meta_mag(meta_mag.x, base_radius + meta_mag.y, base_height + meta_mag.y);
 
     let grad = grad_dir * grad_mag;
 
     let normal = normalize(vec3<f32>(-grad, 1.0));
 
     let hue = atan2(normal.y, normal.x) / (2.0 * 3.14159265);
-    let rgb = hsl_to_rgb(vec3<f32>(normal.z, 1.0, 0.5));
+    let rgb = hsl_to_rgb(vec3<f32>(hue, 1.0, 1.0 - normal.z));
 
     return vec4<f32>(rgb, 1.0);
 }
@@ -69,11 +63,12 @@ fn hsl_to_rgb(hsl: vec3<f32>) -> vec3<f32> {
    return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0));
 }
 
-fn differentiate_rounded_plateau(x: f32) -> f32 {
+fn differentiate_rounded_plateau(x: f32, height: f32) -> f32 {
     if x <= 0.0 || x >= height {
         return 0.0;
     }
     
+    let height_sq = height * height;
     let height_2_sub_x = height * 2.0 - x;
     let height_sqrt_2_sub_x = height * sqrt(height_2_sub_x * x);
     return (
@@ -84,56 +79,61 @@ fn differentiate_rounded_plateau(x: f32) -> f32 {
     ) / height_sqrt_2_sub_x;
 }
 
-fn differentiate_meta_mag(mag: f32) -> f32 {
-    let edge = edge_meta_mag(mag);
-    let deriv = differentiate_rounded_plateau(edge);
+fn differentiate_meta_mag(mag: f32, radius: f32, height: f32) -> f32 {
+    let edge = edge_meta_mag(mag, radius);
+    let deriv = differentiate_rounded_plateau(edge, height);
     return deriv;
 }
 
-fn edge_meta_mag(mag: f32) -> f32 {
-    let inverted = invert_meta_mag(mag);
+fn edge_meta_mag(mag: f32, radius: f32) -> f32 {
+    let inverted = invert_meta_mag(mag, radius);
     let edge = radius - inverted;
     return edge;
 }
 
-fn invert_meta_mag(mag: f32) -> f32 {
+fn invert_meta_mag(mag: f32, radius: f32) -> f32 {
+    if mag == 0.0 {
+        return 0.0;
+    }
+    
+    let radius_sq = radius * radius;
     return (
         -radius_sq + radius * sqrt(
             radius_sq
                 + 4.0 * radius * fade_dist * mag
-                + 4.0 * fade_dist_sq * mag
+                + 4.0 * fade_dist * fade_dist * mag
         )
     ) / (2.0 * fade_dist * mag);
 }
 
-fn rounded_plateau(x: f32) -> f32 {
+fn rounded_plateau(x: f32, height: f32) -> f32 {
     let circle_x = height - clamp(x, 0.0, height);
-    let segment = sqrt(height_sq - circle_x * circle_x);
+    let segment = sqrt(height * height - circle_x * circle_x);
     return segment * (1.0 - x / height) + x;
 }
 
-fn shape_meta_mag(mag: f32) -> f32 {
+fn shape_meta_mag(mag: f32, radius: f32, height: f32) -> f32 {
     if mag < 1.0 {
         return 0.0;
     }
 
-    let edge = edge_meta_mag(mag);
-    let plateau = rounded_plateau(edge);
+    let edge = edge_meta_mag(mag, radius);
+    let plateau = rounded_plateau(edge, height);
     return plateau;
 }
 
-fn load_meta_mag(coord: vec2<i32>) -> f32 {
+fn load_meta_mag(coord: vec2<i32>) -> vec2<f32> {
     let texture_dim = textureDimensions(meta_field_texture);
     let mag = textureLoad(
         meta_field_texture,
         clamp(coord, vec2<i32>(0), vec2<i32>(texture_dim) - vec2<i32>(1)),
         0,
-    ).x;
+    ).xy;
 
     return mag;
 }
 
-fn load_meta_mag_bilinear(coord: vec2<f32>) -> f32 {
+fn load_meta_mag_bilinear(coord: vec2<f32>) -> vec2<f32> {
     let base = vec2<i32>(floor(coord));
     let frac = coord - vec2<f32>(base);
 
@@ -145,4 +145,10 @@ fn load_meta_mag_bilinear(coord: vec2<f32>) -> f32 {
     let vx0 = mix(v00, v10, frac.x);
     let vx1 = mix(v01, v11, frac.x);
     return mix(vx0, vx1, frac.y);
+}
+
+fn load_shaped_meta_mag(coord: vec2<f32>) -> vec2<f32> {
+    let mag = load_meta_mag_bilinear(coord);
+    let mag_shaped = shape_meta_mag(mag.x, base_radius + mag.y, base_height + mag.y);
+    return vec2<f32>(mag_shaped, mag.y);
 }

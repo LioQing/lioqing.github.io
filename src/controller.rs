@@ -7,62 +7,56 @@ use crate::{
 };
 
 const HOVER_OFFSET: f32 = 8.0; // Has to match the CSS value
-const SPRING_STIFFNESS: f32 = 100.0;
-const SPRING_DAMPING: f32 = 10.0;
+const HOVER_OFFSET_SPLITTED: f32 = HOVER_OFFSET / 2.0; // For splitting between elevation and size
+const SPRING_STIFFNESS: f32 = 80.0;
+const SPRING_DAMPING: f32 = 8.0;
 
 #[derive(Debug, Clone)]
-pub struct Panel {
+struct Panel {
     pub element: web_sys::HtmlElement,
     pub top_left: Vec2,
     pub bottom_right: Vec2,
-    pub curr_top_left: Vec2,
-    pub curr_bottom_right: Vec2,
-    pub vel_top_left: Vec2,
-    pub vel_bottom_right: Vec2,
     pub hovered: bool,
+    pub hover_progress: f32,
+    pub hover_progress_vel: f32,
 }
 
 impl Panel {
-    pub fn hovered_top_left(&self) -> Vec2 {
-        self.top_left - Vec2::splat(HOVER_OFFSET)
-    }
-
-    pub fn hovered_bottom_right(&self) -> Vec2 {
-        self.bottom_right + Vec2::splat(HOVER_OFFSET)
-    }
-
-    pub fn target_top_left(&self) -> Vec2 {
-        if self.hovered {
-            self.hovered_top_left()
-        } else {
-            self.top_left
-        }
-    }
-
-    pub fn target_bottom_right(&self) -> Vec2 {
-        if self.hovered {
-            self.hovered_bottom_right()
-        } else {
-            self.bottom_right
-        }
-    }
-
-    pub fn needs_update(&self) -> bool {
+    fn needs_update(&self) -> bool {
         self.hovered != self.element.matches(":hover").unwrap_or(false)
-            || self.curr_top_left != self.target_top_left()
-            || self.curr_bottom_right != self.target_bottom_right()
+            || (self.hovered && self.hover_progress != 1.0)
+            || (!self.hovered && self.hover_progress != 0.0)
     }
 
-    fn spring_step(curr: Vec2, vel: Vec2, target: Vec2, delta_time: f32) -> (Vec2, Vec2) {
-        if delta_time <= 0.0 {
-            return (curr, vel);
-        }
+    fn curr_top_left(&self) -> Vec2 {
+        self.top_left - Vec2::splat(HOVER_OFFSET_SPLITTED) * self.hover_progress
+    }
 
-        let disp = curr - target;
-        let accel = -SPRING_STIFFNESS * disp - SPRING_DAMPING * vel;
-        let next_vel = vel + accel * delta_time;
-        let next_pos = curr + next_vel * delta_time;
-        (next_pos, next_vel)
+    fn curr_bottom_right(&self) -> Vec2 {
+        self.bottom_right + Vec2::splat(HOVER_OFFSET_SPLITTED) * self.hover_progress
+    }
+
+    fn curr_elevation(&self) -> f32 {
+        self.hover_progress * HOVER_OFFSET_SPLITTED
+    }
+
+    fn update(&mut self, delta_time: f32) {
+        let target = if self.element.matches(":hover").unwrap_or(false) {
+            1.0
+        } else {
+            0.0
+        };
+        let displacement = target - self.hover_progress;
+        let spring_accel =
+            SPRING_STIFFNESS * displacement - SPRING_DAMPING * self.hover_progress_vel;
+        self.hover_progress_vel += spring_accel * delta_time;
+        self.hover_progress += self.hover_progress_vel * delta_time;
+
+        // Clamp
+        if (self.hover_progress - target).abs() < 0.001 && self.hover_progress_vel.abs() < 0.001 {
+            self.hover_progress = target;
+            self.hover_progress_vel = 0.0;
+        }
     }
 }
 
@@ -84,13 +78,9 @@ impl PanelController {
                             + scroll_pos.as_vec2(),
                         bottom_right: Vec2::new(rect.right() as f32, rect.bottom() as f32)
                             + scroll_pos.as_vec2(),
-                        curr_top_left: Vec2::new(rect.left() as f32, rect.top() as f32)
-                            + scroll_pos.as_vec2(),
-                        curr_bottom_right: Vec2::new(rect.right() as f32, rect.bottom() as f32)
-                            + scroll_pos.as_vec2(),
-                        vel_top_left: Vec2::ZERO,
-                        vel_bottom_right: Vec2::ZERO,
                         hovered: false,
+                        hover_progress: 0.0,
+                        hover_progress_vel: 0.0,
                     }
                 })
                 .collect(),
@@ -106,54 +96,37 @@ impl PanelController {
                 Vec2::new(rect.right() as f32, rect.bottom() as f32) + scroll_pos.as_vec2();
         }
 
-        self.update_all_meta_boxes(meta_shapes, scroll_pos);
+        self.update_all_meta_boxes(meta_shapes);
     }
 
-    pub fn update(&mut self, meta_shapes: &mut MetaShapes, scroll_pos: IVec2, delta_time: f32) {
+    pub fn update(&mut self, meta_shapes: &mut MetaShapes, delta_time: f32) {
         let panels = self
             .panels
             .iter_mut()
             .enumerate()
             .filter(|(_, panel)| panel.needs_update())
             .update(|(_, panel)| {
-                panel.hovered = panel.element.matches(":hover").unwrap_or(false);
-                let target_top_left = panel.target_top_left();
-                let target_bottom_right = panel.target_bottom_right();
-                let (next_top_left, next_vel_top_left) = Panel::spring_step(
-                    panel.curr_top_left,
-                    panel.vel_top_left,
-                    target_top_left,
-                    delta_time,
-                );
-                let (next_bottom_right, next_vel_bottom_right) = Panel::spring_step(
-                    panel.curr_bottom_right,
-                    panel.vel_bottom_right,
-                    target_bottom_right,
-                    delta_time,
-                );
-                panel.curr_top_left = next_top_left;
-                panel.curr_bottom_right = next_bottom_right;
-                panel.vel_top_left = next_vel_top_left;
-                panel.vel_bottom_right = next_vel_bottom_right;
+                panel.update(delta_time);
             })
             .map(|(i, panel)| (i, &*panel));
-        Self::update_meta_boxes(panels, meta_shapes, scroll_pos);
+        Self::update_meta_boxes(panels, meta_shapes);
     }
 
-    fn update_all_meta_boxes(&self, meta_shapes: &mut MetaShapes, scroll_pos: IVec2) {
+    fn update_all_meta_boxes(&self, meta_shapes: &mut MetaShapes) {
         let panels = self.panels.iter().enumerate();
-        Self::update_meta_boxes(panels, meta_shapes, scroll_pos);
+        Self::update_meta_boxes(panels, meta_shapes);
     }
 
     fn update_meta_boxes<'a>(
         panels: impl IntoIterator<Item = (usize, &'a Panel)>,
         meta_shapes: &mut MetaShapes,
-        scroll_pos: IVec2,
     ) {
         for (i, panel) in panels.into_iter() {
             meta_shapes.boxes_mut()[i] = MetaBox {
-                min: panel.curr_top_left + Vec2::splat(RADIUS as f32),
-                max: panel.curr_bottom_right - Vec2::splat(RADIUS as f32),
+                min: panel.curr_top_left() + Vec2::splat(RADIUS as f32),
+                max: panel.curr_bottom_right() - Vec2::splat(RADIUS as f32),
+                elevation: panel.curr_elevation(),
+                ..Default::default()
             };
         }
     }

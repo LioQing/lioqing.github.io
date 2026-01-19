@@ -2,19 +2,11 @@ use glam::*;
 use wgpu::util::DeviceExt as _;
 
 #[repr(C)]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, bytemuck::Pod, bytemuck::Zeroable)]
-struct MetaShapesMetadata {
-    ball_count: u32,
-    line_count: u32,
-    box_count: u32,
-    _padding: u32,
-}
-
-#[repr(C)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct MetaBall {
-    pub position: Vec2,
+    pub center: Vec2,
     pub radius: f32,
+    pub _padding: f32,
 }
 
 #[repr(C)]
@@ -29,58 +21,44 @@ pub struct MetaLine {
 pub struct MetaBox {
     pub min: Vec2,
     pub max: Vec2,
+    pub elevation: f32,
+    pub _padding: f32,
 }
 
 #[derive(Debug)]
 pub struct MetaShapes {
     balls: Vec<MetaBall>,
-    lines: Vec<MetaLine>,
     boxes: Vec<MetaBox>,
-    buffer: wgpu::Buffer,
+    balls_buffer: wgpu::Buffer,
+    boxes_buffer: wgpu::Buffer,
 }
 
 impl MetaShapes {
-    pub fn new(
-        device: &wgpu::Device,
-        ball_count: usize,
-        line_count: usize,
-        box_count: usize,
-    ) -> Self {
+    pub fn new(device: &wgpu::Device, ball_count: usize, box_count: usize) -> Self {
         let balls = vec![MetaBall::default(); ball_count];
-        let lines = vec![MetaLine::default(); line_count];
         let boxes = vec![MetaBox::default(); box_count];
-        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Meta Shapes Buffer"),
-            contents: [
-                bytemuck::bytes_of(&MetaShapesMetadata {
-                    ball_count: ball_count as u32,
-                    line_count: line_count as u32,
-                    box_count: box_count as u32,
-                    ..Default::default()
-                }),
-                bytemuck::cast_slice(&balls),
-                bytemuck::cast_slice(&lines),
-                bytemuck::cast_slice(&boxes),
-            ]
-            .concat()
-            .as_slice(),
+        let balls_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Meta Balls Buffer"),
+            contents: bytemuck::cast_slice(&balls),
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let boxes_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Meta Boxes Buffer"),
+            contents: bytemuck::cast_slice(&boxes),
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         });
 
         Self {
             balls,
-            lines,
             boxes,
-            buffer,
+            balls_buffer,
+            boxes_buffer,
         }
     }
 
     pub fn balls(&self) -> &[MetaBall] {
         &self.balls
-    }
-
-    pub fn lines(&self) -> &[MetaLine] {
-        &self.lines
     }
 
     pub fn boxes(&self) -> &[MetaBox] {
@@ -91,55 +69,20 @@ impl MetaShapes {
         &mut self.balls
     }
 
-    pub fn lines_mut(&mut self) -> &mut [MetaLine] {
-        &mut self.lines
-    }
-
     pub fn boxes_mut(&mut self) -> &mut [MetaBox] {
         &mut self.boxes
     }
 
     pub fn ensure_buffer(&mut self, queue: &wgpu::Queue) {
-        queue.write_buffer(
-            &self.buffer,
-            std::mem::size_of::<MetaShapesMetadata>() as wgpu::BufferAddress,
-            bytemuck::cast_slice(&self.balls),
-        );
-        queue.write_buffer(
-            &self.buffer,
-            (std::mem::size_of::<MetaShapesMetadata>()
-                + std::mem::size_of::<MetaBall>() * self.balls.len())
-                as wgpu::BufferAddress,
-            bytemuck::cast_slice(&self.lines),
-        );
-        queue.write_buffer(
-            &self.buffer,
-            (std::mem::size_of::<MetaShapesMetadata>()
-                + std::mem::size_of::<MetaBall>() * self.balls.len()
-                + std::mem::size_of::<MetaLine>() * self.lines.len())
-                as wgpu::BufferAddress,
-            bytemuck::cast_slice(&self.boxes),
-        );
+        queue.write_buffer(&self.balls_buffer, 0, bytemuck::cast_slice(&self.balls));
+        queue.write_buffer(&self.boxes_buffer, 0, bytemuck::cast_slice(&self.boxes));
     }
 
-    pub fn buffer(&self) -> &wgpu::Buffer {
-        &self.buffer
+    pub fn balls_buffer(&self) -> &wgpu::Buffer {
+        &self.balls_buffer
     }
 
-    pub fn update_from_panels(&mut self, scroll_pos: IVec2, panels: &[web_sys::HtmlElement]) {
-        if panels.len() > self.boxes.len() {
-            panic!("Not enough boxes to represent panels");
-        }
-
-        for (i, panel) in panels.iter().enumerate() {
-            let rect = panel.get_bounding_client_rect();
-            self.boxes[i] = MetaBox {
-                min: vec2(rect.left() as f32, rect.top() as f32)
-                    + Vec2::splat(36.0)
-                    + scroll_pos.as_vec2(),
-                max: vec2(rect.right() as f32, rect.bottom() as f32) - Vec2::splat(36.0)
-                    + scroll_pos.as_vec2(),
-            };
-        }
+    pub fn boxes_buffer(&self) -> &wgpu::Buffer {
+        &self.boxes_buffer
     }
 }

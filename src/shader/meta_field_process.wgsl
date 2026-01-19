@@ -14,25 +14,35 @@ struct MetaFieldMetadata {
 var<uniform> metadata: MetaFieldMetadata;
 
 @group(0) @binding(2)
-var texture: texture_storage_2d<r32float, write>;
+var texture: texture_storage_2d<rg32float, write>;
 
-struct MetaShapesMetadata {
-    ball_count: u32,
-    line_count: u32,
-    box_count: u32,
-    padding: u32, // Why is padding not automatically inserted??
-}
-struct MetaShapes {
-    metadata: MetaShapesMetadata,
-    data: array<f32>,
-}
-@group(0) @binding(3)
-var<storage> meta_shapes: MetaShapes;
-
-override radius: f32;
+override base_radius: f32;
 override fade_dist: f32;
 override workgroup_size_x: u32;
 override workgroup_size_y: u32;
+
+struct MetaBall {
+    center: vec2<f32>,
+    radius: f32,
+    padding: f32,
+}
+
+struct MetaLine {
+    start: vec2<f32>,
+    end: vec2<f32>,
+}
+
+struct MetaBox {
+    min: vec2<f32>,
+    max: vec2<f32>,
+    elevation: f32,
+}
+
+@group(0) @binding(3)
+var<storage> balls: array<MetaBall>;
+
+@group(0) @binding(4)
+var<storage> boxes: array<MetaBox>;
 
 @compute @workgroup_size(workgroup_size_x, workgroup_size_y)
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -42,82 +52,77 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 
     let cell_pos = vec2<i32>(id.xy) * i32(metadata.cell_size) + metadata.offset + frame_metadata.top_left;
 
-    var accum = 0.0;
+    var meta_mag = 0.0;
+    var elevation = 0.0;
 
-    for (var i = 0u; i < meta_shapes.metadata.ball_count; i += 1u) {
-        let ball_offset = i * 3u;
-        let center = vec2<f32>(
-            meta_shapes.data[ball_offset + 0u],
-            meta_shapes.data[ball_offset + 1u],
-        );
-        let radius = meta_shapes.data[ball_offset + 2u];
+    for (var i = 0u; i < arrayLength(&balls); i += 1u) {
+        let ball = balls[i];
+        let center = ball.center;
+        let radius = ball.radius;
 
-        let disp = vec2<f32>(cell_pos) - center;
-        let dist = length(disp);
-        accum += select(
-            implicit(dist - radius),
-            1e4,
-            dist <= radius,
-        );
+        let disp_from_center = vec2<f32>(cell_pos) - center;
+        let dist = length(disp_from_center) - radius;
+        meta_mag += implicit(max(0.0, dist), base_radius);
     }
 
-    let line_data_start = meta_shapes.metadata.ball_count * 3u;
-    for (var i = 0u; i < meta_shapes.metadata.line_count; i += 1u) {
-        let line_offset = line_data_start + i * 4u;
-        let start = vec2<f32>(
-            meta_shapes.data[line_offset + 0u],
-            meta_shapes.data[line_offset + 1u],
-        );
-        let end = vec2<f32>(
-            meta_shapes.data[line_offset + 2u],
-            meta_shapes.data[line_offset + 3u],
-        );
+    // for (var i = 0u; i < arrayLength(&lines); i += 1u) {
+    //     let line = lines[i];
+    //     let start = line.start;
+    //     let end = line.end;
 
-        let line_vec = end - start;
-        let line_len_sq = dot(line_vec, line_vec);
-        let to_start = vec2<f32>(cell_pos) - start;
-        let to_start_dot_line = dot(to_start, line_vec);
-        let closest_point = select(
-            select(
-                start + to_start_dot_line / line_len_sq * line_vec,
-                end,
-                to_start_dot_line >= line_len_sq,
-            ),
-            start,
-            to_start_dot_line <= 0.0,
-        );
-        let disp = vec2<f32>(cell_pos) - closest_point;
-        accum += implicit(length(disp));
-    }
+    //     let line_vec = end - start;
+    //     let line_len_sq = dot(line_vec, line_vec);
+    //     let to_start = vec2<f32>(cell_pos) - start;
+    //     let to_start_dot_line = dot(to_start, line_vec);
+    //     let closest_point = select(
+    //         select(
+    //             start + to_start_dot_line / line_len_sq * line_vec,
+    //             end,
+    //             to_start_dot_line >= line_len_sq,
+    //         ),
+    //         start,
+    //         to_start_dot_line <= 0.0,
+    //     );
+    //     let disp = vec2<f32>(cell_pos) - closest_point;
+    //     meta_mag += implicit(length(disp));
+    // }
 
-    let box_data_start = line_data_start + meta_shapes.metadata.line_count * 4u;
-    for (var i = 0u; i < meta_shapes.metadata.box_count; i += 1u) {
-        let box_offset = box_data_start + i * 4u;
-        let min = vec2<f32>(
-            meta_shapes.data[box_offset + 0u],
-            meta_shapes.data[box_offset + 1u],
-        );
-        let max = vec2<f32>(
-            meta_shapes.data[box_offset + 2u],
-            meta_shapes.data[box_offset + 3u],
-        );
+    for (var i = 0u; i < arrayLength(&boxes); i += 1u) {
+        let box = boxes[i];
+        let min = box.min;
+        let max = box.max;
 
         let clamped = clamp(vec2<f32>(cell_pos), min, max);
         let disp = vec2<f32>(cell_pos) - clamped;
-        accum += select(
-            implicit(length(disp)),
-            1e4,
-            all(clamped == vec2<f32>(cell_pos)),
-        );
+        let radius = base_radius + box.elevation;
+        meta_mag += implicit(length(disp), radius);
+        elevation += smooth_elevation(length(disp), box.elevation, radius);
     }
 
-    accum = min(accum, 1e4);
+    meta_mag = min(meta_mag, 1e4);
+    elevation = min(elevation, 1e4);
 
-    textureStore(texture, id.xy, vec4<f32>(accum, 0.0, 0.0, 0.0));
+    textureStore(texture, id.xy, vec4<f32>(meta_mag, elevation, 0.0, 0.0));
 }
 
-fn implicit(dist: f32) -> f32 {
+fn implicit(dist: f32, radius: f32) -> f32 {
+    if dist == 0.0 {
+        return 1e4;
+    }
+    
     let implicit = radius * radius / (dist * dist);
     let fade_factor = min((dist - radius) / fade_dist, 1.0);
-    return implicit * (1.0 - fade_factor);
+    return min(implicit * (1.0 - fade_factor), 1e4);
+}
+
+fn smooth_elevation(dist: f32, elevation: f32, radius: f32) -> f32 {
+    return select(
+        elevation,
+        select(
+            elevation * (1.0 - (dist - radius) / fade_dist),
+            0.0,
+            dist >= radius + fade_dist,
+        ),
+        dist > radius,
+    );
 }

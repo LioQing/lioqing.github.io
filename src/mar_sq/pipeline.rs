@@ -522,9 +522,9 @@ impl MarchingSquaresLiquidQuadRenderer {
 
         let compilation_options = wgpu::PipelineCompilationOptions {
             constants: &[
-                ("radius", RADIUS),
+                ("base_radius", RADIUS),
                 ("fade_dist", FADE_DIST),
-                ("height", HEIGHT),
+                ("base_height", HEIGHT),
             ],
             ..Default::default()
         };

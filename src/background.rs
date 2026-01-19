@@ -120,7 +120,7 @@ impl Background {
 
         let mouse = Mouse::new(frame_metadata.resolution().as_vec2() / 2.0);
 
-        let mut meta_shapes = MetaShapes::new(&gpu.device, 1, 0, panels.len());
+        let mut meta_shapes = MetaShapes::new(&gpu.device, 1, panels.len());
 
         // let mut meta_shapes = MetaShapes::new(&gpu.device, 2, 1, 1);
         // meta_shapes.balls_mut()[1] = MetaBall {
@@ -390,11 +390,12 @@ impl Background {
         );
 
         self.panel_controller
-            .update(&mut self.meta_shapes, window.scroll_pos(), delta_time);
+            .update(&mut self.meta_shapes, delta_time);
 
         self.meta_shapes.balls_mut()[0] = MetaBall {
-            position: self.mouse.position(),
-            radius: 36.0,
+            center: self.mouse.position(),
+            radius: 18.0,
+            ..Default::default()
         };
 
         // TODO: Update only if needed

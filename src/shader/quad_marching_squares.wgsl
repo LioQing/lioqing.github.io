@@ -8,7 +8,7 @@ struct MetaFieldMetadata {
 var<uniform> metadata: MetaFieldMetadata;
 
 @group(0) @binding(1)
-var texture: texture_storage_2d<r32float, read>;
+var texture: texture_storage_2d<rg32float, read>;
 
 struct DrawIndirectArgs {
     vertex_count: u32,

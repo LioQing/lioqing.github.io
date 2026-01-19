@@ -93,6 +93,16 @@ impl MetaFieldProcessor {
                     },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
             ],
         });
 
@@ -118,7 +128,11 @@ impl MetaFieldProcessor {
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
-                    resource: meta_shapes.buffer().as_entire_binding(),
+                    resource: meta_shapes.balls_buffer().as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: meta_shapes.boxes_buffer().as_entire_binding(),
                 },
             ],
         });
@@ -136,7 +150,7 @@ impl MetaFieldProcessor {
             entry_point: Some("main"),
             compilation_options: wgpu::PipelineCompilationOptions {
                 constants: &[
-                    ("radius", RADIUS),
+                    ("base_radius", RADIUS),
                     ("fade_dist", FADE_DIST),
                     ("workgroup_size_x", workgroup_size.x as f64),
                     ("workgroup_size_y", workgroup_size.y as f64),
@@ -183,7 +197,11 @@ impl MetaFieldProcessor {
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
-                    resource: meta_shapes.buffer().as_entire_binding(),
+                    resource: meta_shapes.balls_buffer().as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: meta_shapes.boxes_buffer().as_entire_binding(),
                 },
             ],
         });
@@ -262,9 +280,9 @@ impl<T: MetaFieldRenderType> MetaFieldRenderer<T> {
 
         let compilation_options = wgpu::PipelineCompilationOptions {
             constants: &[
-                ("radius", RADIUS),
+                ("base_radius", RADIUS),
                 ("fade_dist", FADE_DIST),
-                ("height", HEIGHT),
+                ("base_height", HEIGHT),
             ],
             ..Default::default()
         };
