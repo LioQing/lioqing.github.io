@@ -29,8 +29,8 @@ use crate::{
     meta_shape::{MetaBall, MetaShapes},
     mouse::Mouse,
     pipeline::{
-        BackgroundSvgRenderer, GaussianBlurPipeline, MetaFieldGrad, MetaFieldMag,
-        MetaFieldProcessor, MetaFieldRenderer,
+        BackgroundImageRenderer, BackgroundSvgRenderer, GaussianBlurPipeline, MetaFieldGrad,
+        MetaFieldMag, MetaFieldProcessor, MetaFieldRenderer,
     },
     texture_blitter::TextureBlitter,
     theme::{Theme, ThemePropertyName},
@@ -53,6 +53,7 @@ pub struct Background {
 
     // Pipelines
     background_svg_renderer: BackgroundSvgRenderer,
+    zero_one_background_renderer: BackgroundImageRenderer,
     blur: GaussianBlurPipeline,
     grid_processor: GridProcessor,
     grid_renderer: GridRenderer,
@@ -147,6 +148,13 @@ impl Background {
         let background_svg_renderer =
             BackgroundSvgRenderer::new(&gpu.device, &frame_metadata, gpu.config.format);
 
+        let zero_one_background_renderer = BackgroundImageRenderer::new(
+            &gpu.device,
+            &gpu.queue,
+            gpu.config.format,
+            include_bytes!("../assets/zero_one.webp"),
+        );
+
         let blur = GaussianBlurPipeline::new(&gpu.device, &frame_metadata, gpu.config.format);
 
         let grid_processor = GridProcessor::new(
@@ -211,6 +219,7 @@ impl Background {
             mouse,
 
             background_svg_renderer,
+            zero_one_background_renderer,
             blur,
             grid_processor,
             grid_renderer,
@@ -446,20 +455,28 @@ impl Background {
                 });
             }
 
-            self.background_svg_renderer.render(
+            self.zero_one_background_renderer.render(
                 &self.gpu.device,
                 &self.gpu.queue,
                 &mut encoder,
                 &view,
                 &self.frame_metadata,
-                &self.mouse,
             );
 
-            self.grid_processor
-                .process(&mut encoder, self.grid_metadata.resolution());
+            // self.background_svg_renderer.render(
+            //     &self.gpu.device,
+            //     &self.gpu.queue,
+            //     &mut encoder,
+            //     &view,
+            //     &self.frame_metadata,
+            //     &self.mouse,
+            // );
 
-            self.grid_renderer
-                .render(&mut encoder, &view, self.grid_metadata.resolution());
+            // self.grid_processor
+            //     .process(&mut encoder, self.grid_metadata.resolution());
+
+            // self.grid_renderer
+            //     .render(&mut encoder, &view, self.grid_metadata.resolution());
 
             self.meta_field_processor
                 .process(&mut encoder, self.meta_field.resolution());

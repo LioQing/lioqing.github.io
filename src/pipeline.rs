@@ -528,10 +528,90 @@ impl BackgroundSvgRenderer {
             background_view,
             frame_metadata,
             init_pos + parallax_offset + mouse_offset,
+            Vec2::ONE,
         );
     }
 }
 
+#[derive(Debug)]
+pub struct BackgroundImageRenderer {
+    background_blitter: TextureBlitter,
+    image: wgpu::Texture,
+    size: UVec2,
+}
+
+impl BackgroundImageRenderer {
+    pub fn new(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        texture_format: wgpu::TextureFormat,
+        data: &[u8],
+    ) -> Self {
+        let bytes = image::load_from_memory(data)
+            .expect("load background image")
+            .to_rgba8();
+
+        let (width, height) = bytes.dimensions();
+        let size = UVec2::new(width, height);
+
+        let image = device.create_texture_with_data(
+            queue,
+            &wgpu::TextureDescriptor {
+                label: Some("Background Image Texture"),
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Rgba8Unorm,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            },
+            wgpu::util::TextureDataOrder::default(),
+            &bytes,
+        );
+
+        let background_blitter = TextureBlitter::new(device, texture_format);
+
+        Self {
+            background_blitter,
+            image,
+            size,
+        }
+    }
+
+    pub fn render(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+        background_view: &wgpu::TextureView,
+        frame_metadata: &FrameMetadata,
+    ) {
+        let scale =
+            Vec2::splat((frame_metadata.resolution().x as f32 / self.size.x as f32).max(0.5));
+        let center = (frame_metadata.resolution().as_vec2() - self.size.as_vec2() * scale) * 0.5;
+        let top_left = (center - frame_metadata.top_left().as_vec2() * 0.5).as_ivec2();
+
+        self.background_blitter.copy(
+            device,
+            queue,
+            encoder,
+            &self
+                .image
+                .create_view(&wgpu::TextureViewDescriptor::default()),
+            background_view,
+            frame_metadata,
+            top_left,
+            scale,
+        );
+    }
+}
+
+#[derive(Debug)]
 pub struct GaussianBlurPipeline {
     render_pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,

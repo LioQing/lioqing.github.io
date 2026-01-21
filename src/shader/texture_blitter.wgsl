@@ -5,7 +5,7 @@ struct FrameMetadata {
 
 struct TextureBlitParams {
     position: vec2<f32>,
-    _pad: vec2<f32>,
+    scale: vec2<f32>,
 };
 
 struct VertexOut {
@@ -32,7 +32,7 @@ fn vert_main(@builtin(vertex_index) vertex_index: u32) -> VertexOut {
     let pos = params.position;
 
     let tl = pos;
-    let br = pos + src_size;
+    let br = pos + src_size * params.scale;
 
     var positions = array<vec2<f32>, 4>(
         vec2<f32>(tl.x, tl.y),

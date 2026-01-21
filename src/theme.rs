@@ -55,7 +55,6 @@ impl Theme {
 pub enum ThemeProperty {
     Background(Vec4),
     Foreground(Vec4),
-    PanelBackground(Vec4),
     Ttd(Vec4),
     Hku(Vec4),
     Hk(Vec4),
@@ -66,7 +65,6 @@ impl ThemeProperty {
         match self {
             ThemeProperty::Background(color)
             | ThemeProperty::Foreground(color)
-            | ThemeProperty::PanelBackground(color)
             | ThemeProperty::Ttd(color)
             | ThemeProperty::Hku(color)
             | ThemeProperty::Hk(color) => {
@@ -83,7 +81,6 @@ impl ThemeProperty {
         match self {
             ThemeProperty::Background(color)
             | ThemeProperty::Foreground(color)
-            | ThemeProperty::PanelBackground(color)
             | ThemeProperty::Ttd(color)
             | ThemeProperty::Hku(color)
             | ThemeProperty::Hk(color) => Some(*color),
@@ -101,10 +98,6 @@ fn dark() -> &'static HashMap<ThemePropertyName, ThemeProperty> {
             (
                 ThemePropertyName::Foreground,
                 ThemeProperty::Foreground(vec4(0.87, 0.87, 0.87, 1.0)),
-            ),
-            (
-                ThemePropertyName::PanelBackground,
-                ThemeProperty::PanelBackground(vec4(0.6, 0.6, 0.6, 0.1)),
             ),
             (
                 ThemePropertyName::Ttd,

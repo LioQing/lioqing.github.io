@@ -4,12 +4,13 @@ use wgpu::util::DeviceExt as _;
 use crate::frame::FrameMetadata;
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Default, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct TextureBlitParams {
     position: Vec2,
-    _pad: Vec2,
+    scale: Vec2,
 }
 
+#[derive(Debug)]
 pub struct TextureBlitter {
     render_pipeline: wgpu::RenderPipeline,
     bind_group_layout: wgpu::BindGroupLayout,
@@ -118,7 +119,7 @@ impl TextureBlitter {
             label: Some("Texture Blitter Params Buffer"),
             contents: bytemuck::bytes_of(&TextureBlitParams {
                 position: Vec2::ZERO,
-                _pad: Vec2::ZERO,
+                scale: Vec2::ONE,
             }),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
@@ -140,12 +141,16 @@ impl TextureBlitter {
         dst_view: &wgpu::TextureView,
         frame_metadata: &FrameMetadata,
         position: IVec2,
+        scale: Vec2,
     ) {
-        let params = TextureBlitParams {
-            position: position.as_vec2(),
-            _pad: Vec2::ZERO,
-        };
-        queue.write_buffer(&self.params_buffer, 0, bytemuck::bytes_of(&params));
+        queue.write_buffer(
+            &self.params_buffer,
+            0,
+            bytemuck::bytes_of(&TextureBlitParams {
+                position: position.as_vec2(),
+                scale,
+            }),
+        );
 
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("Texture Blitter Bind Group"),
@@ -208,6 +213,7 @@ impl TextureBlitter {
             dst_view,
             frame_metadata,
             IVec2::ZERO,
+            Vec2::ONE,
         );
     }
 }

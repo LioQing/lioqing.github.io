@@ -113,6 +113,10 @@
         src: url("assets/Lio Font.ttf") format("truetype");
       }
 
+      html {
+        overflow-x: hidden !important;
+      }
+
       main {
         position: relative;
         margin: 0 auto;
@@ -129,6 +133,7 @@
         font-weight: 400;
         font-style: normal;
         font-variation-settings: "wdth" 100;
+        overflow-x: hidden !important;
       }
 
       h1 {
@@ -207,11 +212,7 @@
       }
 
       .panel {
-        /* background: var(--panel-background); */
         border-radius: 36px;
-        /* box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1); */
-        /* backdrop-filter: blur(12px); */
-        /* -webkit-backdrop-filter: blur(12px); */
       }
 
       .interactive-panel:hover {
@@ -224,7 +225,7 @@
         min-width: 300px;
         width: 100%;
         height: 100%;
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 3 / 2;
       }
 
       .about-me-content {
@@ -233,17 +234,23 @@
         gap: 24px;
         align-items: center;
         justify-content: center;
-        height: calc(100% - 32px - 32px);
+        height: calc(100% - 24px - 24px);
         padding: 24px 36px;
+      }
+
+      .about-me-logo {
+        width: auto;
+        height: 1.2em;
+        vertical-align: middle;
       }
 
       .about-me-profile {
         width: calc(100% - 12em);
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 3 / 2;
       }
 
       .about-me-profile > div {
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 3 / 2;
       }
 
       .about-me-profile-content {
@@ -443,7 +450,7 @@
               align-items: center;
             "
           >
-            <div class="panel interactive-panel tilting-container about-me">
+            <div class="panel tilting-container about-me">
               <div class="tilting about-me-content">
                 <h3>
                   I am from
@@ -452,35 +459,32 @@
                     rel="noopener noreferrer"
                     href="https://en.wikipedia.org/wiki/Hong_Kong"
                     style="color: var(--hk)"
-                    >Hong Kong</a
-                  >. I speak Cantonese, Mandarin, and English.
+                    >Hong Kong
+                    <img
+                      src="assets/Flag_of_Hong_Kong.svg"
+                      alt="Flag of Hong Kong"
+                      class="about-me-logo" /></a
+                  >. I am native in Cantonese and Mandarin, and fluent in
+                  English.
                 </h3>
-                <img
-                  src="assets/Flag_of_Hong_Kong.svg"
-                  alt="Flag of Hong Kong"
-                  class="about-me-logo"
-                  style="width: auto; height: 48px"
-                />
               </div>
             </div>
-            <div class="panel interactive-panel tilting-container about-me">
+            <div class="panel tilting-container about-me">
               <div class="tilting about-me-content">
                 <h3>
-                  I work as a Software Engineer at
+                  I currently work as a full-time Software Engineer at
                   <a
                     target="_blank"
                     rel="noopener noreferrer"
                     href="https://www.thetradedesk.com/"
                     style="color: var(--ttd)"
-                    >The Trade Desk</a
+                    >The Trade Desk
+                    <img
+                      src="assets/TTD_Lockup_BlueSky.svg"
+                      alt="The Trade Desk Logo"
+                      class="about-me-logo" /></a
                   >.
                 </h3>
-                <img
-                  src="assets/TTD_Lockup_BlueSky.svg"
-                  alt="The Trade Desk Logo"
-                  class="about-me-logo"
-                  style="width: auto; height: 48px"
-                />
               </div>
             </div>
           </div>
@@ -494,24 +498,23 @@
               align-items: center;
             "
           >
-            <div class="panel interactive-panel tilting-container about-me">
+            <div class="panel tilting-container about-me">
               <div class="tilting about-me-content">
                 <h3>
-                  I graduated with BEng(CompSc) from
+                  I graduated with a Bachelor of Engineering in Computer Science
+                  from
                   <a
                     target="_blank"
                     rel="noopener noreferrer"
                     href="https://www.thetradedesk.com/"
                     style="color: var(--hku)"
-                    >The University of Hong Kong</a
+                    >The University of Hong Kong
+                    <img
+                      src="assets/University_of_Hong_Kong-Logo.svg"
+                      alt="The University of Hong Kong Logo"
+                      class="about-me-logo" /></a
                   >.
                 </h3>
-                <img
-                  src="assets/University_of_Hong_Kong-Logo.svg"
-                  alt="The University of Hong Kong Logo"
-                  class="about-me-logo"
-                  style="width: auto; height: 48px"
-                />
               </div>
             </div>
             <div class="about-me">
@@ -524,11 +527,11 @@
                 "
               >
                 <div
-                  class="panel interactive-panel tilting-container"
+                  class="panel tilting-container"
                   style="width: 100%; height: calc(50% - 0.75em)"
                 >
                   <div class="tilting about-me-content">
-                    <h3>Connect with me on my other social profiles!</h3>
+                    <h3>My other social profiles...</h3>
                   </div>
                 </div>
                 <div
@@ -551,7 +554,7 @@
                           <img
                             src="assets/LI-In-Bug.png"
                             alt="LinkedIn Logo"
-                            class="about-me-logo"
+                            class="about-me-profile-logo"
                             style="width: auto; height: 48px"
                           />
                         </div>
@@ -570,7 +573,7 @@
                           <img
                             src="assets/github-mark-white.svg"
                             alt="GitHub Logo"
-                            class="about-me-logo"
+                            class="about-me-profile-logo"
                             style="width: auto; height: 48px"
                           />
                         </div>

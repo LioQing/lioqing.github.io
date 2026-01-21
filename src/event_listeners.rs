@@ -96,11 +96,14 @@ pub fn init() {
         let update_about_me_logo_heights = || {
             let window = web_sys::window().expect_throw("window");
             let document = window.document().expect_throw("document");
-            for element in document.get_elements_by_class_name("about-me-logo").iter() {
+            for element in document
+                .get_elements_by_class_name("about-me-profile-logo")
+                .iter()
+            {
                 let logo = match element.dyn_into::<web_sys::HtmlElement>() {
                     Ok(logo) => logo,
                     Err(e) => {
-                        log::warn!("About me logo element is not an HtmlElement: {e:?}");
+                        log::warn!("About me profile logo element is not an HtmlElement: {e:?}");
                         continue;
                     }
                 };
@@ -189,7 +192,7 @@ pub fn init() {
                     .style()
                     .set_property("height", &format!("{available_height}px"))
                 {
-                    log::warn!("Failed to set about-me logo height: {e:?}");
+                    log::warn!("Failed to set about-me-profile-logo height: {e:?}");
                 }
             }
         };
@@ -201,116 +204,116 @@ pub fn init() {
     }
 
     // Tilting
-    {
-        const MAX_TILT_ANGLE: f32 = 10.0;
+    // {
+    //     const MAX_TILT_ANGLE: f32 = 10.0;
 
-        let tilting_containers = document.get_elements_by_class_name("tilting-container");
-        for tilting_container in tilting_containers.iter() {
-            let tilting_container = tilting_container;
+    //     let tilting_containers = document.get_elements_by_class_name("tilting-container");
+    //     for tilting_container in tilting_containers.iter() {
+    //         let tilting_container = tilting_container;
 
-            let tilting = tilting_container
-                .get_elements_by_class_name("tilting")
-                .iter()
-                .next()
-                .unwrap_throw()
-                .dyn_into::<web_sys::HtmlElement>()
-                .unwrap_throw();
+    //         let tilting = tilting_container
+    //             .get_elements_by_class_name("tilting")
+    //             .iter()
+    //             .next()
+    //             .unwrap_throw()
+    //             .dyn_into::<web_sys::HtmlElement>()
+    //             .unwrap_throw();
 
-            add_event_listener!(tilting_container, "mousemove", {
-                let tilting_container = tilting_container.clone();
-                let tilting = tilting.clone();
-                move |event: web_sys::MouseEvent| {
-                    let rect = tilting_container.get_bounding_client_rect();
-                    let mouse = (event.client_position().as_vec2() - rect.top_left()) / rect.size();
-                    let dir = (mouse - Vec2::splat(0.5)) * Vec2::new(1.0, -1.0) * 2.0;
-                    let rotate = match dir.length_squared() {
-                        d if d >= 1.0 => Vec2::ZERO,
-                        d => dir.normalize() * (d * std::f32::consts::PI).sin() * MAX_TILT_ANGLE,
-                    };
-                    if let Err(e) = tilting.style().set_property(
-                        "transform",
-                        &format!(
-                            "rotateX({}deg) rotateY({}deg)",
-                            rotate.y, rotate.x
-                        ),
-                    ) {
-                        log::warn!("Failed to set tilting transform: {e:?}");
-                    }
-                }
-            }; FnMut(_));
+    //         add_event_listener!(tilting_container, "mousemove", {
+    //             let tilting_container = tilting_container.clone();
+    //             let tilting = tilting.clone();
+    //             move |event: web_sys::MouseEvent| {
+    //                 let rect = tilting_container.get_bounding_client_rect();
+    //                 let mouse = (event.client_position().as_vec2() - rect.top_left()) / rect.size();
+    //                 let dir = (mouse - Vec2::splat(0.5)) * Vec2::new(1.0, -1.0) * 2.0;
+    //                 let rotate = match dir.length_squared() {
+    //                     d if d >= 1.0 => Vec2::ZERO,
+    //                     d => dir.normalize() * (d * std::f32::consts::PI).sin() * MAX_TILT_ANGLE,
+    //                 };
+    //                 if let Err(e) = tilting.style().set_property(
+    //                     "transform",
+    //                     &format!(
+    //                         "rotateX({}deg) rotateY({}deg)",
+    //                         rotate.y, rotate.x
+    //                     ),
+    //                 ) {
+    //                     log::warn!("Failed to set tilting transform: {e:?}");
+    //                 }
+    //             }
+    //         }; FnMut(_));
 
-            add_event_listener!(tilting_container, "mouseleave", {
-                move || {
-                    if let Err(e) = tilting.style().set_property("transform", "rotateX(0deg) rotateY(0deg)") {
-                        log::warn!("Failed to reset tilting transform: {e:?}");
-                    }
-                }
-            }; FnMut());
-        }
-    }
+    //         add_event_listener!(tilting_container, "mouseleave", {
+    //             move || {
+    //                 if let Err(e) = tilting.style().set_property("transform", "rotateX(0deg) rotateY(0deg)") {
+    //                     log::warn!("Failed to reset tilting transform: {e:?}");
+    //                 }
+    //             }
+    //         }; FnMut());
+    //     }
+    // }
 
-    // Experiences filter
-    wasm_bindgen_futures::spawn_local(async move {
-        #[derive(Debug, Clone, Copy, strum::Display, serde::Deserialize)]
-        #[strum(serialize_all = "lowercase")]
-        #[serde(rename_all = "lowercase")]
-        enum Filter {
-            Education,
-            Work,
-            Others,
-        }
+    // // Experiences filter
+    // wasm_bindgen_futures::spawn_local(async move {
+    //     #[derive(Debug, Clone, Copy, strum::Display, serde::Deserialize)]
+    //     #[strum(serialize_all = "lowercase")]
+    //     #[serde(rename_all = "lowercase")]
+    //     enum Filter {
+    //         Education,
+    //         Work,
+    //         Others,
+    //     }
 
-        #[derive(Debug, Clone, serde::Deserialize)]
-        struct Experience {
-            name: String,
-            organization: String,
-            filter: Filter,
-            start_year: u32,
-            start_month: u32,
-            end_year: Option<u32>,
-            end_month: Option<u32>,
-        }
+    //     #[derive(Debug, Clone, serde::Deserialize)]
+    //     struct Experience {
+    //         name: String,
+    //         organization: String,
+    //         filter: Filter,
+    //         start_year: u32,
+    //         start_month: u32,
+    //         end_year: Option<u32>,
+    //         end_month: Option<u32>,
+    //     }
 
-        let experiences_list = document
-            .get_element_by_id("experiences-list")
-            .unwrap_throw()
-            .dyn_into::<web_sys::HtmlElement>()
-            .unwrap_throw();
+    //     let experiences_list = document
+    //         .get_element_by_id("experiences-list")
+    //         .unwrap_throw()
+    //         .dyn_into::<web_sys::HtmlElement>()
+    //         .unwrap_throw();
 
-        let response = JsFuture::from(window.fetch_with_str("assets/experiences.json"))
-            .await
-            .unwrap_throw()
-            .dyn_into::<web_sys::Response>()
-            .unwrap_throw();
-        let json = JsFuture::from(response.json().unwrap_throw())
-            .await
-            .unwrap_throw();
-        let experiences = serde_wasm_bindgen::from_value::<Vec<Experience>>(json).unwrap_throw();
+    //     let response = JsFuture::from(window.fetch_with_str("assets/experiences.json"))
+    //         .await
+    //         .unwrap_throw()
+    //         .dyn_into::<web_sys::Response>()
+    //         .unwrap_throw();
+    //     let json = JsFuture::from(response.json().unwrap_throw())
+    //         .await
+    //         .unwrap_throw();
+    //     let experiences = serde_wasm_bindgen::from_value::<Vec<Experience>>(json).unwrap_throw();
 
-        let html = experiences
-            .into_iter()
-            .map(|experience| {
-                let start_date =
-                    format!("{:04}-{:02}", experience.start_year, experience.start_month);
-                let end_date = match (experience.end_year, experience.end_month) {
-                    (Some(year), Some(month)) => format!("{:04}-{:02}", year, month),
-                    _ => "Present".to_string(),
-                };
-                format!(
-                    "
-                    <div class=\"panel experience\">
-                        <div>
-                            <h3>{}</h3>
-                            <p>{}</p>
-                            <p>{} - {}</p>
-                        </div>
-                    </div>
-                    ",
-                    experience.name, experience.organization, start_date, end_date
-                )
-            })
-            .collect::<String>();
+    //     let html = experiences
+    //         .into_iter()
+    //         .map(|experience| {
+    //             let start_date =
+    //                 format!("{:04}-{:02}", experience.start_year, experience.start_month);
+    //             let end_date = match (experience.end_year, experience.end_month) {
+    //                 (Some(year), Some(month)) => format!("{:04}-{:02}", year, month),
+    //                 _ => "Present".to_string(),
+    //             };
+    //             format!(
+    //                 "
+    //                 <div class=\"panel experience\">
+    //                     <div>
+    //                         <h3>{}</h3>
+    //                         <p>{}</p>
+    //                         <p>{} - {}</p>
+    //                     </div>
+    //                 </div>
+    //                 ",
+    //                 experience.name, experience.organization, start_date, end_date
+    //             )
+    //         })
+    //         .collect::<String>();
 
-        experiences_list.set_inner_html(&html);
-    });
+    //     experiences_list.set_inner_html(&html);
+    // });
 }

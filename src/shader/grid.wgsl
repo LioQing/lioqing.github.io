@@ -41,7 +41,7 @@ fn vert_main(
     let target_pixel_pos = center_pixel_pos + state[instance_index];
 
     let pos_mag = length(state[instance_index]);
-    let intensity = pos_mag / (1 + pos_mag);
+    let intensity = saturate(pos_mag / (1 + pos_mag) + select(0.5, 0.0, is_outer));
 
     let positions = array<vec2<f32>, 4>(
         vec2<f32>(-1.0, -1.0), // 0: bottom-left
@@ -81,5 +81,5 @@ fn frag_main(
         discard;
     }
 
-    return vec4<f32>(select(0.6, 0.4, is_outer == 1u) * intensity);
+    return vec4<f32>(vec3<f32>(0.0), intensity);
 }

@@ -12,50 +12,78 @@ const SPRING_STIFFNESS: f32 = 80.0;
 const SPRING_DAMPING: f32 = 8.0;
 
 #[derive(Debug, Clone)]
-struct Panel {
-    pub element: web_sys::HtmlElement,
-    pub top_left: Vec2,
-    pub bottom_right: Vec2,
+pub struct InteractivePanel {
     pub hovered: bool,
     pub hover_progress: f32,
     pub hover_progress_vel: f32,
 }
 
+#[derive(Debug)]
+pub enum PanelType {
+    Interactive(InteractivePanel),
+    Static,
+}
+
+impl PanelType {
+    pub fn hover_progress(&self) -> f32 {
+        match self {
+            PanelType::Interactive(panel) => panel.hover_progress,
+            PanelType::Static => 0.0,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Panel {
+    pub element: web_sys::HtmlElement,
+    pub panel_type: PanelType,
+    pub top_left: Vec2,
+    pub bottom_right: Vec2,
+}
+
 impl Panel {
     fn needs_update(&self) -> bool {
-        self.hovered != self.element.matches(":hover").unwrap_or(false)
-            || (self.hovered && self.hover_progress != 1.0)
-            || (!self.hovered && self.hover_progress != 0.0)
+        let PanelType::Interactive(panel) = &self.panel_type else {
+            return false;
+        };
+
+        panel.hovered != self.element.matches(":hover").unwrap_or(false)
+            || (panel.hovered && panel.hover_progress != 1.0)
+            || (!panel.hovered && panel.hover_progress != 0.0)
     }
 
     fn curr_top_left(&self) -> Vec2 {
-        self.top_left - Vec2::splat(HOVER_OFFSET_SPLITTED) * self.hover_progress
+        self.top_left - Vec2::splat(HOVER_OFFSET_SPLITTED) * self.panel_type.hover_progress()
     }
 
     fn curr_bottom_right(&self) -> Vec2 {
-        self.bottom_right + Vec2::splat(HOVER_OFFSET_SPLITTED) * self.hover_progress
+        self.bottom_right + Vec2::splat(HOVER_OFFSET_SPLITTED) * self.panel_type.hover_progress()
     }
 
     fn curr_elevation(&self) -> f32 {
-        self.hover_progress * HOVER_OFFSET_SPLITTED
+        self.panel_type.hover_progress() * HOVER_OFFSET_SPLITTED
     }
 
     fn update(&mut self, delta_time: f32) {
+        let PanelType::Interactive(panel) = &mut self.panel_type else {
+            return;
+        };
+
         let target = if self.element.matches(":hover").unwrap_or(false) {
             1.0
         } else {
             0.0
         };
-        let displacement = target - self.hover_progress;
+        let displacement = target - panel.hover_progress;
         let spring_accel =
-            SPRING_STIFFNESS * displacement - SPRING_DAMPING * self.hover_progress_vel;
-        self.hover_progress_vel += spring_accel * delta_time;
-        self.hover_progress += self.hover_progress_vel * delta_time;
+            SPRING_STIFFNESS * displacement - SPRING_DAMPING * panel.hover_progress_vel;
+        panel.hover_progress_vel += spring_accel * delta_time;
+        panel.hover_progress += panel.hover_progress_vel * delta_time;
 
         // Clamp
-        if (self.hover_progress - target).abs() < 0.001 && self.hover_progress_vel.abs() < 0.001 {
-            self.hover_progress = target;
-            self.hover_progress_vel = 0.0;
+        if (panel.hover_progress - target).abs() < 0.001 && panel.hover_progress_vel.abs() < 0.001 {
+            panel.hover_progress = target;
+            panel.hover_progress_vel = 0.0;
         }
     }
 }
@@ -72,15 +100,22 @@ impl PanelController {
                 .into_iter()
                 .map(|element| {
                     let rect = element.get_bounding_client_rect();
+                    let panel_type = match element.class_list().contains("interactive-panel") {
+                        true => PanelType::Interactive(InteractivePanel {
+                            hovered: false,
+                            hover_progress: 0.0,
+                            hover_progress_vel: 0.0,
+                        }),
+                        false => PanelType::Static,
+                    };
+
                     Panel {
-                        element,
                         top_left: Vec2::new(rect.left() as f32, rect.top() as f32)
                             + scroll_pos.as_vec2(),
                         bottom_right: Vec2::new(rect.right() as f32, rect.bottom() as f32)
                             + scroll_pos.as_vec2(),
-                        hovered: false,
-                        hover_progress: 0.0,
-                        hover_progress_vel: 0.0,
+                        element,
+                        panel_type,
                     }
                 })
                 .collect(),
