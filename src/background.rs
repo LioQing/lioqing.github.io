@@ -54,6 +54,7 @@ pub struct Background {
     // Pipelines
     background_svg_renderer: BackgroundSvgRenderer,
     zero_one_background_renderer: BackgroundImageRenderer,
+    skills_background_renderer: BackgroundImageRenderer,
     blur: GaussianBlurPipeline,
     grid_processor: GridProcessor,
     grid_renderer: GridRenderer,
@@ -155,6 +156,13 @@ impl Background {
             include_bytes!("../assets/zero_one.webp"),
         );
 
+        let skills_background_renderer = BackgroundImageRenderer::new(
+            &gpu.device,
+            &gpu.queue,
+            gpu.config.format,
+            include_bytes!("../assets/skills.webp"),
+        );
+
         let blur = GaussianBlurPipeline::new(&gpu.device, &frame_metadata, gpu.config.format);
 
         let grid_processor = GridProcessor::new(
@@ -220,6 +228,7 @@ impl Background {
 
             background_svg_renderer,
             zero_one_background_renderer,
+            skills_background_renderer,
             blur,
             grid_processor,
             grid_renderer,
@@ -461,6 +470,16 @@ impl Background {
                 &mut encoder,
                 &view,
                 &self.frame_metadata,
+                0,
+            );
+
+            self.skills_background_renderer.render(
+                &self.gpu.device,
+                &self.gpu.queue,
+                &mut encoder,
+                &view,
+                &self.frame_metadata,
+                self.skills_background_renderer.size().y as i32 / 2,
             );
 
             // self.background_svg_renderer.render(

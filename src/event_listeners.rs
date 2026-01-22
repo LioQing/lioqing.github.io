@@ -252,68 +252,92 @@ pub fn init() {
     //     }
     // }
 
-    // // Experiences filter
-    // wasm_bindgen_futures::spawn_local(async move {
-    //     #[derive(Debug, Clone, Copy, strum::Display, serde::Deserialize)]
-    //     #[strum(serialize_all = "lowercase")]
-    //     #[serde(rename_all = "lowercase")]
-    //     enum Filter {
-    //         Education,
-    //         Work,
-    //         Others,
-    //     }
+    // Experiences filter
+    wasm_bindgen_futures::spawn_local(async move {
+        #[derive(Debug, Clone, Copy, strum::Display, serde::Deserialize)]
+        #[strum(serialize_all = "lowercase")]
+        #[serde(rename_all = "lowercase")]
+        enum Filter {
+            Education,
+            Work,
+            Others,
+        }
 
-    //     #[derive(Debug, Clone, serde::Deserialize)]
-    //     struct Experience {
-    //         name: String,
-    //         organization: String,
-    //         filter: Filter,
-    //         start_year: u32,
-    //         start_month: u32,
-    //         end_year: Option<u32>,
-    //         end_month: Option<u32>,
-    //     }
+        #[derive(Debug, Clone, serde::Deserialize)]
+        struct Experience {
+            name: String,
+            organization: String,
+            filter: Filter,
+            start_year: u32,
+            start_month: u32,
+            end_year: Option<u32>,
+            end_month: Option<u32>,
+        }
 
-    //     let experiences_list = document
-    //         .get_element_by_id("experiences-list")
-    //         .unwrap_throw()
-    //         .dyn_into::<web_sys::HtmlElement>()
-    //         .unwrap_throw();
+        fn show_month(month: u32) -> &'static str {
+            match month {
+                1 => "Jan",
+                2 => "Feb",
+                3 => "Mar",
+                4 => "Apr",
+                5 => "May",
+                6 => "Jun",
+                7 => "Jul",
+                8 => "Aug",
+                9 => "Sep",
+                10 => "Oct",
+                11 => "Nov",
+                12 => "Dec",
+                _ => "Unknown",
+            }
+        }
 
-    //     let response = JsFuture::from(window.fetch_with_str("assets/experiences.json"))
-    //         .await
-    //         .unwrap_throw()
-    //         .dyn_into::<web_sys::Response>()
-    //         .unwrap_throw();
-    //     let json = JsFuture::from(response.json().unwrap_throw())
-    //         .await
-    //         .unwrap_throw();
-    //     let experiences = serde_wasm_bindgen::from_value::<Vec<Experience>>(json).unwrap_throw();
+        let experiences_list = document
+            .get_element_by_id("experiences-list")
+            .unwrap_throw()
+            .dyn_into::<web_sys::HtmlElement>()
+            .unwrap_throw();
 
-    //     let html = experiences
-    //         .into_iter()
-    //         .map(|experience| {
-    //             let start_date =
-    //                 format!("{:04}-{:02}", experience.start_year, experience.start_month);
-    //             let end_date = match (experience.end_year, experience.end_month) {
-    //                 (Some(year), Some(month)) => format!("{:04}-{:02}", year, month),
-    //                 _ => "Present".to_string(),
-    //             };
-    //             format!(
-    //                 "
-    //                 <div class=\"panel experience\">
-    //                     <div>
-    //                         <h3>{}</h3>
-    //                         <p>{}</p>
-    //                         <p>{} - {}</p>
-    //                     </div>
-    //                 </div>
-    //                 ",
-    //                 experience.name, experience.organization, start_date, end_date
-    //             )
-    //         })
-    //         .collect::<String>();
+        let response = JsFuture::from(window.fetch_with_str("assets/experiences.json"))
+            .await
+            .unwrap_throw()
+            .dyn_into::<web_sys::Response>()
+            .unwrap_throw();
+        let json = JsFuture::from(response.json().unwrap_throw())
+            .await
+            .unwrap_throw();
+        let experiences = serde_wasm_bindgen::from_value::<Vec<Experience>>(json).unwrap_throw();
 
-    //     experiences_list.set_inner_html(&html);
-    // });
+        let experiences_html = experiences
+            .into_iter()
+            .map(|experience| {
+                let start_date = format!(
+                    "{} {}",
+                    show_month(experience.start_month),
+                    experience.start_year
+                );
+                let end_date = match (experience.end_year, experience.end_month) {
+                    (Some(year), Some(month)) => format!("{} {}", show_month(month), year),
+                    _ => "Present".to_string(),
+                };
+                format!(
+                    "
+                    <div class=\"experience\">
+                        <div>
+                            <h3>{}</h3>
+                            <p>{}</p>
+                            <p>{} - {}</p>
+                        </div>
+                    </div>
+                    ",
+                    experience.name, experience.organization, start_date, end_date
+                )
+            })
+            .collect::<String>();
+
+        let html =
+            format!("<div class=\"panel\" style=\"padding: 12px 24px\">{experiences_html}</div>",);
+
+        experiences_list.set_inner_html(&html);
+    });
 }

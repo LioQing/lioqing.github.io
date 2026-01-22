@@ -590,11 +590,11 @@ impl BackgroundImageRenderer {
         encoder: &mut wgpu::CommandEncoder,
         background_view: &wgpu::TextureView,
         frame_metadata: &FrameMetadata,
+        offset: i32,
     ) {
-        let scale =
-            Vec2::splat((frame_metadata.resolution().x as f32 / self.size.x as f32).max(0.5));
-        let center = (frame_metadata.resolution().as_vec2() - self.size.as_vec2() * scale) * 0.5;
-        let top_left = (center - frame_metadata.top_left().as_vec2() * 0.5).as_ivec2();
+        let (scale, center) = self.get_scale_and_center(frame_metadata);
+        let top_left =
+            (center - frame_metadata.top_left().as_vec2() * 0.5).as_ivec2() + IVec2::new(0, offset);
 
         self.background_blitter.copy(
             device,
@@ -608,6 +608,17 @@ impl BackgroundImageRenderer {
             top_left,
             scale,
         );
+    }
+
+    pub fn get_scale_and_center(&self, frame_metadata: &FrameMetadata) -> (Vec2, Vec2) {
+        let scale =
+            Vec2::splat((frame_metadata.resolution().x as f32 / self.size.x as f32).max(0.5));
+        let center = (frame_metadata.resolution().as_vec2() - self.size.as_vec2() * scale) * 0.5;
+        (scale, center)
+    }
+
+    pub fn size(&self) -> UVec2 {
+        self.size
     }
 }
 
