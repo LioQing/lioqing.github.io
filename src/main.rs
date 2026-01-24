@@ -62,6 +62,8 @@ fn main() {
                 .dyn_into::<web_sys::HtmlCanvasElement>()
                 .unwrap_throw();
 
+            panic!();
+
             let gpu = Gpu::new(canvas.clone()).await;
 
             let (tx, rx) = mpsc::channel();

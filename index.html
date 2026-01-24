@@ -72,7 +72,6 @@
         position: relative;
         margin: 0 auto;
         padding: 0 32px;
-        min-height: 300vh;
       }
 
       body {
@@ -84,7 +83,6 @@
         font-weight: 400;
         font-style: normal;
         font-variation-settings: "wdth" 100;
-        overflow-x: hidden !important;
       }
 
       h1 {
@@ -342,7 +340,10 @@
   </head>
 
   <body>
-    <canvas id="background" style="position: fixed; top: 0; left: 0"></canvas>
+    <canvas
+      id="background"
+      style="position: fixed; top: 0; left: 0; height: 100%; width: 100%"
+    ></canvas>
 
     <script src="register_sw.js"></script>
 
@@ -609,6 +610,12 @@
         <noscript>You need javascript to use this website</noscript>
         <h3>Loading…</h3>
         <div class="loading-ring"></div>
+        <p style="padding-top: 36px; text-align: center">
+          This website uses WebGPU<br />if loading takes too long or fails<br /><a
+            href="https://lioqing.com/personal-website-2022"
+            >click here to try the previous version</a
+          >
+        </p>
       </div>
     </main>
   </body>
