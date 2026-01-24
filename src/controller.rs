@@ -767,7 +767,7 @@ impl ExperienceController {
             .dyn_into::<web_sys::HtmlElement>()
             .unwrap_throw();
 
-        let response = JsFuture::from(window.fetch_with_str("./experiences.json"))
+        let response = JsFuture::from(window.fetch_with_str("experiences.json"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()

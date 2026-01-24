@@ -430,7 +430,7 @@ impl BackgroundSvgRenderer {
     pub async fn new_skills(device: &wgpu::Device, texture_format: wgpu::TextureFormat) -> Self {
         let window = web_sys::window().expect_throw("window");
 
-        let response = JsFuture::from(window.fetch_with_str("./skills.svg"))
+        let response = JsFuture::from(window.fetch_with_str("skills.svg"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
@@ -552,7 +552,7 @@ impl BackgroundImageRenderer {
     ) -> Self {
         let window = web_sys::window().expect_throw("window");
 
-        let response = JsFuture::from(window.fetch_with_str("./zero_one.webp"))
+        let response = JsFuture::from(window.fetch_with_str("zero_one.webp"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
@@ -574,7 +574,7 @@ impl BackgroundImageRenderer {
     ) -> Self {
         let window = web_sys::window().expect_throw("window");
 
-        let response = JsFuture::from(window.fetch_with_str("./skills.webp"))
+        let response = JsFuture::from(window.fetch_with_str("skills.webp"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
