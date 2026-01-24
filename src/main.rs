@@ -74,7 +74,7 @@ fn main() {
                     }
                 }
             }; FnMut(_));
-            add_event_listener!(window, "resize", {
+            add_event_listener!(window.visual_viewport().unwrap_throw(), "resize", {
                 let tx = tx.clone();
                 move || {
                     if let Err(e) = tx.send(BackgroundEvent::Resize) {
