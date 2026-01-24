@@ -452,7 +452,7 @@ impl ProjectController {
             .dyn_into::<web_sys::HtmlElement>()
             .unwrap_throw();
 
-        let response = JsFuture::from(window.fetch_with_str("./assets/projects.json"))
+        let response = JsFuture::from(window.fetch_with_str("projects.json"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
@@ -586,7 +586,7 @@ impl ProjectController {
                 gap: 24px;
                 flex-wrap: wrap;
             \">
-                <img src=\"assets/projects/{}\" alt=\"{}\" style=\"
+                <img src=\"projects/{}\" alt=\"{}\" style=\"
                     width: max(480px, 40%);
                     height: auto;
                     border-radius: 12px;
@@ -767,7 +767,7 @@ impl ExperienceController {
             .dyn_into::<web_sys::HtmlElement>()
             .unwrap_throw();
 
-        let response = JsFuture::from(window.fetch_with_str("./assets/experiences.json"))
+        let response = JsFuture::from(window.fetch_with_str("./experiences.json"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
