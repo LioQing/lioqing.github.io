@@ -452,7 +452,7 @@ impl ProjectController {
             .dyn_into::<web_sys::HtmlElement>()
             .unwrap_throw();
 
-        let response = JsFuture::from(window.fetch_with_str("assets/projects.json"))
+        let response = JsFuture::from(window.fetch_with_str("./assets/projects.json"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
@@ -767,7 +767,7 @@ impl ExperienceController {
             .dyn_into::<web_sys::HtmlElement>()
             .unwrap_throw();
 
-        let response = JsFuture::from(window.fetch_with_str("assets/experiences.json"))
+        let response = JsFuture::from(window.fetch_with_str("./assets/experiences.json"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()

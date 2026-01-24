@@ -3,7 +3,7 @@ use std::sync::mpsc;
 use ahash::HashMap;
 use glam::*;
 use strum::IntoDiscriminant;
-use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
+use wasm_bindgen::UnwrapThrowExt as _;
 
 use crate::{
     controller::{
@@ -11,17 +11,11 @@ use crate::{
         SkillsController,
     },
     delta_time::DeltaTime,
-    ext::{
-        CanvasExt as _, HtmlCollectionExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt,
-    },
-    frame::{self, FrameMetadata},
+    ext::{CanvasExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt},
+    frame::FrameMetadata,
     gpu::Gpu,
-    grid::{
-        GridMetadata, GridState,
-        pipeline::{GridProcessor, GridRenderer},
-    },
+    grid::{GridMetadata, GridState},
     mar_sq::{
-        line_segment::LineSegments,
         pipeline::{
             MarchingSquaresLiquidQuadRenderer, MarchingSquaresProcessor,
             MarchingSquaresShapeRenderer,
@@ -33,7 +27,7 @@ use crate::{
     mouse::Mouse,
     pipeline::{
         BackgroundImageRenderer, BackgroundSvgRenderer, GaussianBlurPipeline, MetaFieldGrad,
-        MetaFieldMag, MetaFieldProcessor, MetaFieldRenderer,
+        MetaFieldProcessor, MetaFieldRenderer,
     },
     texture_blitter::TextureBlitter,
     theme::{Theme, ThemePropertyName},

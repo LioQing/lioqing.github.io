@@ -5,7 +5,6 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::js_sys;
 use wgpu::util::DeviceExt as _;
 
-use crate::mouse::Mouse;
 use crate::texture_blitter::TextureBlitter;
 use crate::{frame::FrameMetadata, meta_field::MetaField, meta_shape::MetaShapes};
 
@@ -431,7 +430,7 @@ impl BackgroundSvgRenderer {
     pub async fn new_skills(device: &wgpu::Device, texture_format: wgpu::TextureFormat) -> Self {
         let window = web_sys::window().expect_throw("window");
 
-        let response = JsFuture::from(window.fetch_with_str("assets/skills.svg"))
+        let response = JsFuture::from(window.fetch_with_str("./assets/skills.svg"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
@@ -553,7 +552,7 @@ impl BackgroundImageRenderer {
     ) -> Self {
         let window = web_sys::window().expect_throw("window");
 
-        let response = JsFuture::from(window.fetch_with_str("assets/zero_one.webp"))
+        let response = JsFuture::from(window.fetch_with_str("./assets/zero_one.webp"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
@@ -575,7 +574,7 @@ impl BackgroundImageRenderer {
     ) -> Self {
         let window = web_sys::window().expect_throw("window");
 
-        let response = JsFuture::from(window.fetch_with_str("assets/skills.webp"))
+        let response = JsFuture::from(window.fetch_with_str("./assets/skills.webp"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()
