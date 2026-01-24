@@ -1,12 +1,15 @@
 use glam::*;
+use wasm_bindgen::UnwrapThrowExt as _;
 use wgpu::util::DeviceExt as _;
+
+use crate::{controller::PanelController, ext::WindowExt as _};
 
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct MetaBall {
     pub center: Vec2,
     pub radius: f32,
-    pub _padding: f32,
+    pub hidden: u32,
 }
 
 #[repr(C)]
@@ -34,6 +37,16 @@ pub struct MetaShapes {
 }
 
 impl MetaShapes {
+    pub fn new_with_controller(
+        device: &wgpu::Device,
+        panel_controller: &mut PanelController,
+    ) -> Self {
+        let window = web_sys::window().expect_throw("window");
+        let mut this = MetaShapes::new(device, 1, panel_controller.panel_count());
+        panel_controller.resize(&mut this, window.scroll_pos());
+        this
+    }
+
     pub fn new(device: &wgpu::Device, ball_count: usize, box_count: usize) -> Self {
         let balls = vec![MetaBall::default(); ball_count];
         let boxes = vec![MetaBox::default(); box_count];

@@ -6,6 +6,7 @@ use crate::frame::FrameMetadata;
 pub struct Mouse {
     target: Vec2,
     position: Vec2,
+    hidden: bool,
 }
 
 impl Mouse {
@@ -13,6 +14,7 @@ impl Mouse {
         Self {
             position,
             target: position,
+            hidden: true,
         }
     }
 
@@ -38,5 +40,10 @@ impl Mouse {
 
     pub fn set_target(&mut self, target: Vec2) {
         self.target = target;
+        self.hidden = false;
+    }
+
+    pub fn hidden(&self) -> bool {
+        self.hidden
     }
 }

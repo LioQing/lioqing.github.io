@@ -80,12 +80,18 @@ impl HtmlCollectionExt for web_sys::HtmlCollection {
 pub trait DomRectExt {
     fn top_left(&self) -> Vec2;
 
+    fn bottom_right(&self) -> Vec2;
+
     fn size(&self) -> Vec2;
 }
 
 impl DomRectExt for web_sys::DomRect {
     fn top_left(&self) -> Vec2 {
         Vec2::new(self.left() as f32, self.top() as f32)
+    }
+
+    fn bottom_right(&self) -> Vec2 {
+        Vec2::new(self.right() as f32, self.bottom() as f32)
     }
 
     fn size(&self) -> Vec2 {

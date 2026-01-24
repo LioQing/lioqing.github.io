@@ -86,6 +86,36 @@
       href="assets/experiences.json"
       data-target-path="assets"
     />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/projects.json"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/zero_one.webp"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/skills.webp"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-file"
+      href="assets/skills.svg"
+      data-target-path="assets"
+    />
+    <link
+      data-trunk
+      rel="copy-dir"
+      href="assets/projects"
+      data-target-path="assets/projects"
+    />
 
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="assets/icon_ios_touch_192.png" />
@@ -128,7 +158,7 @@
         background: var(--background);
         color: var(--foreground);
         font-family: "Open Sans", sans-serif;
-        font-size: 18px;
+        font-size: 1em;
         font-optical-sizing: auto;
         font-weight: 400;
         font-style: normal;
@@ -215,11 +245,6 @@
         border-radius: 36px;
       }
 
-      .interactive-panel:hover {
-        padding: 8px;
-        margin: -8px;
-      }
-
       .about-me {
         max-width: 500px;
         min-width: 300px;
@@ -287,56 +312,55 @@
         text-align: center;
       }
 
-      .experiences-filter {
+      #projects {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        width: fit-content;
+        justify-content: center;
+        align-items: center;
+        max-width: 1200px;
+        min-width: 300px;
+      }
+
+      #skills {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        max-width: 500px;
+        min-width: 300px;
+        width: 100%;
         padding: 24px;
+        aspect-ratio: 4 / 3;
       }
 
-      .experiences-filter > p {
-        margin-left: 12px;
-      }
-
-      .experiences-filter-options {
+      .experiences-filter {
         display: flex;
         flex-direction: row;
-        justify-content: center;
-        gap: 12px;
+        gap: 36px;
+        width: fit-content;
+        padding: 24px;
       }
 
       .experiences-filter-button {
         padding: 12px 24px;
         border-radius: 16px;
-        transition: all 0.2s ease-in-out;
         cursor: pointer;
-        user-select: none;
-      }
-
-      .experiences-filter-button:hover {
-        transform-origin: center;
-        transform: scale(1.05);
-        transition: transform 0.2s ease-in-out;
-      }
-
-      .experiences-filter-button:active {
-        transform-origin: center;
-        transform: scale(0.95);
-        transition: transform 0.1s ease-in-out;
+        position: relative;
+        transition: ease-in-out 0.3s all;
       }
 
       #experiences-list {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin-top: 36px;
+        margin-top: 12px;
       }
 
       .experience {
         max-width: 1200px;
         min-width: 300px;
         width: 100%;
+        transition: ease-in-out 0.3s all;
+        overflow: hidden;
       }
 
       .experience > div {
@@ -437,8 +461,11 @@
         </div>
       </div>
 
-      <section style="margin-top: 2em">
-        <div style="display: flex; flex-direction: column; gap: 48px">
+      <section style="margin-top: 36px">
+        <div
+          id="about-me"
+          style="display: flex; flex-direction: column; gap: 48px"
+        >
           <div
             style="
               display: flex;
@@ -500,12 +527,12 @@
             <div class="panel tilting-container about-me">
               <div class="tilting about-me-content">
                 <h3>
-                  I graduated with a Bachelor of Engineering in Computer Science
+                  I graduated with Bachelor of Engineering in Computer Science
                   from
                   <a
                     target="_blank"
                     rel="noopener noreferrer"
-                    href="https://www.thetradedesk.com/"
+                    href="https://www.hku.hk/"
                     style="color: var(--hku)"
                     >The University of Hong Kong
                     <img
@@ -588,31 +615,48 @@
 
       <section style="margin-top: 20vh">
         <div class="section-header">
+          <h2>Projects</h2>
+          <p>My featured personal projects.</p>
+        </div>
+        <div style="display: flex; justify-content: center">
+          <div id="projects"></div>
+        </div>
+      </section>
+
+      <section style="margin-top: 20vh">
+        <div class="section-header">
+          <h2>Skills</h2>
+          <p>My computer skills.</p>
+        </div>
+        <div style="display: flex; justify-content: center">
+          <div id="skills"></div>
+        </div>
+      </section>
+
+      <section style="margin-top: 20vh">
+        <div class="section-header">
           <h2>Experiences</h2>
           <p>My education and professional experiences.</p>
         </div>
         <div style="display: flex; justify-content: center">
-          <div class="panel experiences-filter">
-            <p>Filter by:</p>
-            <div class="experiences-filter-options">
-              <div
-                id="experiences-education-filter"
-                class="experiences-filter-button"
-              >
-                <h3>Education</h3>
-              </div>
-              <div
-                id="experiences-work-filter"
-                class="experiences-filter-button"
-              >
-                <h3>Work</h3>
-              </div>
-              <div
-                id="experiences-others-filter"
-                class="experiences-filter-button"
-              >
-                <h3>Others</h3>
-              </div>
+          <div class="experiences-filter">
+            <div
+              id="experiences-work-filter"
+              class="experiences-filter-button interactive-panel panel"
+            >
+              <h3>Work</h3>
+            </div>
+            <div
+              id="experiences-education-filter"
+              class="experiences-filter-button interactive-panel panel"
+            >
+              <h3>Education</h3>
+            </div>
+            <div
+              id="experiences-others-filter"
+              class="experiences-filter-button interactive-panel panel"
+            >
+              <h3>Others</h3>
             </div>
           </div>
         </div>
@@ -626,6 +670,19 @@
           </div>
         </div>
       </section>
+
+      <footer style="height: calc(20vh + 1em)">
+        <div
+          style="
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: end;
+          "
+        >
+          <p>© 2026 Lio Qing. All rights reserved.</p>
+        </div>
+      </footer>
 
       <div id="loading-cover">
         <noscript>You need javascript to use this website</noscript>

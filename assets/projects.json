@@ -1,0 +1,128 @@
+[
+  {
+    "title": "WGPU 3D Gaussian Splatting Viewer App",
+    "tags": ["Rust", "Computer Graphics", "Web"],
+    "year": 2025,
+    "month": 1,
+    "subtitle": "3D Gaussian Splatting Viewer made in WGPU",
+    "description": "I made this viewer for my work as a student research assistant at Innovation Wing of the University of Hong Kong. It is built with WGPU, a Rust library for WebGPU, and is used to visualize and edit 3D Gaussian Splatting - a cutting edge 3D reconstruction technique.",
+    "image_url": "wgpu-3dgs-viewer-app.png",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/lioqing/wgpu-3dgs-viewer"
+      },
+      {
+        "label": "Website",
+        "url": "https://lioqing.com/wgpu-3dgs-viewer-app"
+      },
+      {
+        "label": "Crates.io",
+        "url": "https://crates.io/crates/wgpu-3dgs-viewer"
+      }
+    ]
+  },
+  {
+    "title": "Simple RL Driver",
+    "tags": ["Python", "Artificial Intelligence", "Computer Graphics"],
+    "year": 2024,
+    "month": 11,
+    "subtitle": "A Project Built to Teach Reinforcement Learning",
+    "description": "This is a project I made to teach reinforcement learning to students from my secondary school. It is built on top of my previous project Race AI, with a more user-friendly interface and more features.",
+    "image_url": "simple-rl-driver.png",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/lioqing/simple-rl-driver"
+      }
+    ]
+  },
+  {
+    "title": "Talk Your Way Out",
+    "tags": ["Python", "C#", "Artificial Intelligence", "Computer Graphics"],
+    "year": 2024,
+    "month": 4,
+    "subtitle": "A Game with Large Language Model Driven Non-Player Characters",
+    "description": "This is a game I made when I was the leader of the GenNarrator AI student interest group at the University of Hong Kong. Players talk with non-player characters driven by large language models in real-time to solve puzzles and progress in the game.",
+    "image_url": "talk-your-way-out.png",
+    "links": [
+      {
+        "label": "InnoWing",
+        "url": "https://innoacademy.engg.hku.hk/talk_your_way_out/"
+      }
+    ]
+  },
+  {
+    "title": "Code Shelf",
+    "tags": ["Python", "TypeScript", "Computer Graphics", "Web"],
+    "year": 2023,
+    "month": 8,
+    "subtitle": "Visualization Focused Tutorial Website",
+    "description": "A coding tutorial site I created for learning computer science concepts, with animations and interactive components for better learning experience.",
+    "image_url": "code-shelf.png",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/LioQing/code-shelf"
+      },
+      {
+        "label": "Website",
+        "url": "https://lioqing.com/code-shelf"
+      }
+    ]
+  },
+  {
+    "title": "Bro Well 兄井",
+    "tags": ["Illustrator", "Blender", "Graphic"],
+    "year": 2023,
+    "month": 3,
+    "subtitle": "Tribute to My Favorite Restaurant",
+    "description": "A popular restaurant around my secondary school, I frequently go there during my high school years. Unfortunately, it has closed down.",
+    "image_url": "bro-well.png",
+    "links": []
+  },
+  {
+    "title": "HKU Timetable Viewer",
+    "tags": ["TypeScript", "Web"],
+    "year": 2022,
+    "month": 7,
+    "subtitle": "A Timetable Viewer for University of Hong Kong Students",
+    "description": "Back then, the university did not have a timetable planner/viewer, so I made one. It was a great help for me and my schoolmates, but now the university has its own so it is much less used.",
+    "image_url": "hku-timetable-viewer.png",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/LioQing/hku-timetable-viewer"
+      },
+      {
+        "label": "Website",
+        "url": "https://lioqing.com/hku-timetable-viewer"
+      }
+    ]
+  },
+  {
+    "title": "The Tank Arena",
+    "tags": ["C++", "Computer Graphics", "Artificial Intelligence"],
+    "year": 2021,
+    "month": 7,
+    "subtitle": "Tank Game with AI",
+    "description": "A game built in a custom game engine with an architecture optimized for data intensive calculation. Implement all components including AI, level, physics from scratch with a single graphics library SFML. It is one of my first major project.",
+    "image_url": "the-tank-arena.png",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/LioQing/The-Tank-Arena"
+      }
+    ]
+  },
+  {
+    "title": "St. Paul's College Biology Society Logo",
+    "tags": ["Illustrator", "Graphic"],
+    "year": 2020,
+    "month": 10,
+    "subtitle": "The Biology Society Logo for My Secondary School",
+    "description": "I was not good at biology, but the lessons were very interesting and I really like it. I am also a part of the Biology Society committee.",
+    "image_url": "bio-soc.png",
+    "links": []
+  }
+]

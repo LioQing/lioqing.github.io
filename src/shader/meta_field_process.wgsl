@@ -24,7 +24,7 @@ override workgroup_size_y: u32;
 struct MetaBall {
     center: vec2<f32>,
     radius: f32,
-    padding: f32,
+    hidden: u32,
 }
 
 struct MetaLine {
@@ -56,6 +56,10 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
     var elevation = 0.0;
 
     for (var i = 0u; i < arrayLength(&balls); i += 1u) {
+        if balls[i].hidden == 1u {
+            continue;
+        }
+        
         let ball = balls[i];
         let center = ball.center;
         let radius = ball.radius;

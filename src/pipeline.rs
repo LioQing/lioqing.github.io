@@ -1,6 +1,8 @@
 use glam::*;
 use vello_svg::vello;
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast as _, UnwrapThrowExt};
+use wasm_bindgen_futures::JsFuture;
+use web_sys::js_sys;
 use wgpu::util::DeviceExt as _;
 
 use crate::mouse::Mouse;
@@ -426,13 +428,33 @@ pub struct BackgroundSvgRenderer {
 }
 
 impl BackgroundSvgRenderer {
+    pub async fn new_skills(device: &wgpu::Device, texture_format: wgpu::TextureFormat) -> Self {
+        let window = web_sys::window().expect_throw("window");
+
+        let response = JsFuture::from(window.fetch_with_str("assets/skills.svg"))
+            .await
+            .unwrap_throw()
+            .dyn_into::<web_sys::Response>()
+            .unwrap_throw();
+        let svg = JsFuture::from(response.text().unwrap_throw())
+            .await
+            .unwrap_throw()
+            .as_string()
+            .unwrap_throw();
+
+        // Matches the SVG size
+        const INTERMEDIATE_SIZE: UVec2 = UVec2::new(1200, 900);
+
+        Self::new(device, texture_format, INTERMEDIATE_SIZE, &svg)
+    }
+
     pub fn new(
         device: &wgpu::Device,
-        frame_metadata: &FrameMetadata,
         texture_format: wgpu::TextureFormat,
+        intermediate_size: UVec2,
+        svg: &str,
     ) -> Self {
-        let scene =
-            vello_svg::render(include_str!("../assets/test.svg")).expect_throw("background svg");
+        let scene = vello_svg::render(svg).expect_throw("background svg");
 
         let renderer = vello::Renderer::new(
             device,
@@ -448,8 +470,8 @@ impl BackgroundSvgRenderer {
         let intermediate_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("Background SVG Intermediate Texture"),
             size: wgpu::Extent3d {
-                width: frame_metadata.resolution().x,
-                height: frame_metadata.resolution().y,
+                width: intermediate_size.x,
+                height: intermediate_size.y,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -470,23 +492,6 @@ impl BackgroundSvgRenderer {
         }
     }
 
-    pub fn resize(&mut self, device: &wgpu::Device, frame_metadata: &FrameMetadata) {
-        self.intermediate_texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Background SVG Intermediate Texture"),
-            size: wgpu::Extent3d {
-                width: frame_metadata.resolution().x,
-                height: frame_metadata.resolution().y,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
-    }
-
     pub fn render(
         &mut self,
         device: &wgpu::Device,
@@ -494,7 +499,8 @@ impl BackgroundSvgRenderer {
         encoder: &mut wgpu::CommandEncoder,
         background_view: &wgpu::TextureView,
         frame_metadata: &FrameMetadata,
-        mosue: &Mouse,
+        top_left: IVec2,
+        bottom_right: IVec2,
     ) {
         if let Err(e) = self.renderer.render_to_texture(
             device,
@@ -505,18 +511,13 @@ impl BackgroundSvgRenderer {
                 .create_view(&wgpu::TextureViewDescriptor::default()),
             &vello::RenderParams {
                 base_color: vello::peniko::color::palette::css::TRANSPARENT,
-                width: frame_metadata.resolution().x,
-                height: frame_metadata.resolution().y,
+                width: self.intermediate_texture.size().width,
+                height: self.intermediate_texture.size().height,
                 antialiasing_method: vello::AaConfig::Area,
             },
         ) {
             log::error!("Failed to render background SVG: {e}");
         }
-
-        // TODO: This is a temporary position for this test svg
-        let init_pos = IVec2::new(0, frame_metadata.resolution().y as i32);
-        let parallax_offset = -(frame_metadata.top_left().as_vec2() * 0.5).as_ivec2();
-        let mouse_offset = ((mosue.position() - frame_metadata.center()) * 0.01).as_ivec2();
 
         self.background_blitter.copy(
             device,
@@ -527,8 +528,12 @@ impl BackgroundSvgRenderer {
                 .create_view(&wgpu::TextureViewDescriptor::default()),
             background_view,
             frame_metadata,
-            init_pos + parallax_offset + mouse_offset,
-            Vec2::ONE,
+            top_left,
+            (bottom_right - top_left).as_vec2()
+                / Vec2::new(
+                    self.intermediate_texture.size().width as f32,
+                    self.intermediate_texture.size().height as f32,
+                ),
         );
     }
 }
@@ -541,6 +546,50 @@ pub struct BackgroundImageRenderer {
 }
 
 impl BackgroundImageRenderer {
+    pub async fn new_zero_one(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        texture_format: wgpu::TextureFormat,
+    ) -> Self {
+        let window = web_sys::window().expect_throw("window");
+
+        let response = JsFuture::from(window.fetch_with_str("assets/zero_one.webp"))
+            .await
+            .unwrap_throw()
+            .dyn_into::<web_sys::Response>()
+            .unwrap_throw();
+        let bytes = JsFuture::from(response.array_buffer().unwrap_throw())
+            .await
+            .unwrap_throw()
+            .dyn_into::<js_sys::ArrayBuffer>()
+            .unwrap_throw();
+        let bytes = js_sys::Uint8Array::new(&bytes).to_vec();
+
+        Self::new(device, queue, texture_format, &bytes)
+    }
+
+    pub async fn new_skills(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        texture_format: wgpu::TextureFormat,
+    ) -> Self {
+        let window = web_sys::window().expect_throw("window");
+
+        let response = JsFuture::from(window.fetch_with_str("assets/skills.webp"))
+            .await
+            .unwrap_throw()
+            .dyn_into::<web_sys::Response>()
+            .unwrap_throw();
+        let bytes = JsFuture::from(response.array_buffer().unwrap_throw())
+            .await
+            .unwrap_throw()
+            .dyn_into::<js_sys::ArrayBuffer>()
+            .unwrap_throw();
+        let bytes = js_sys::Uint8Array::new(&bytes).to_vec();
+
+        Self::new(device, queue, texture_format, &bytes)
+    }
+
     pub fn new(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
@@ -590,11 +639,9 @@ impl BackgroundImageRenderer {
         encoder: &mut wgpu::CommandEncoder,
         background_view: &wgpu::TextureView,
         frame_metadata: &FrameMetadata,
-        offset: i32,
+        offset: IVec2,
     ) {
-        let (scale, center) = self.get_scale_and_center(frame_metadata);
-        let top_left =
-            (center - frame_metadata.top_left().as_vec2() * 0.5).as_ivec2() + IVec2::new(0, offset);
+        let (top_left, scale) = self.get_top_left_and_scale(frame_metadata);
 
         self.background_blitter.copy(
             device,
@@ -605,20 +652,26 @@ impl BackgroundImageRenderer {
                 .create_view(&wgpu::TextureViewDescriptor::default()),
             background_view,
             frame_metadata,
-            top_left,
+            top_left + offset,
             scale,
         );
     }
 
-    pub fn get_scale_and_center(&self, frame_metadata: &FrameMetadata) -> (Vec2, Vec2) {
+    pub fn get_top_left_and_scale(&self, frame_metadata: &FrameMetadata) -> (IVec2, Vec2) {
         let scale =
             Vec2::splat((frame_metadata.resolution().x as f32 / self.size.x as f32).max(0.5));
-        let center = (frame_metadata.resolution().as_vec2() - self.size.as_vec2() * scale) * 0.5;
-        (scale, center)
+        let target_size = self.size.as_vec2() * scale;
+        let top_left = -((target_size - frame_metadata.resolution().as_vec2()
+            + frame_metadata.resolution().as_vec2() * Vec2::Y)
+            * 0.5)
+            .as_ivec2();
+
+        (top_left, scale)
     }
 
-    pub fn size(&self) -> UVec2 {
-        self.size
+    pub fn get_size(&self, frame_metadata: &FrameMetadata) -> UVec2 {
+        let scale = (frame_metadata.resolution().x as f32 / self.size.x as f32).max(0.5);
+        (self.size.as_vec2() * Vec2::splat(scale)).as_uvec2()
     }
 }
 

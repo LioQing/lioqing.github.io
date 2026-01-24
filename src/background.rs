@@ -6,12 +6,15 @@ use strum::IntoDiscriminant;
 use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
 
 use crate::{
-    controller::PanelController,
+    controller::{
+        BackgroundController, ExperienceController, PanelController, ProjectController,
+        SkillsController,
+    },
     delta_time::DeltaTime,
     ext::{
         CanvasExt as _, HtmlCollectionExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt,
     },
-    frame::FrameMetadata,
+    frame::{self, FrameMetadata},
     gpu::Gpu,
     grid::{
         GridMetadata, GridState,
@@ -51,13 +54,19 @@ pub struct Background {
     fps_display_counter: u32,
     mouse: Mouse,
 
+    // Controller
+    experience_controller: ExperienceController,
+    skills_controller: SkillsController,
+    background_controller: BackgroundController,
+    panel_controller: PanelController,
+
     // Pipelines
-    background_svg_renderer: BackgroundSvgRenderer,
+    skills_renderer: BackgroundSvgRenderer,
     zero_one_background_renderer: BackgroundImageRenderer,
     skills_background_renderer: BackgroundImageRenderer,
     blur: GaussianBlurPipeline,
-    grid_processor: GridProcessor,
-    grid_renderer: GridRenderer,
+    // grid_processor: GridProcessor,
+    // grid_renderer: GridRenderer,
     meta_field_processor: MetaFieldProcessor,
     meta_field_renderer: MetaFieldRenderer<MetaFieldGrad>,
     marching_squares_processor: MarchingSquaresProcessor<Quads>,
@@ -73,19 +82,23 @@ pub struct Background {
     grid_metadata: GridMetadata,
     meta_shapes: MetaShapes,
     meta_field: MetaField,
-    line_segments: LineSegments,
+    // line_segments: LineSegments,
     quads: Quads,
-
-    // Controller
-    panel_controller: PanelController,
 }
 
 impl Background {
-    pub fn new(
+    pub async fn new(
         gpu: Gpu,
         canvas: web_sys::HtmlCanvasElement,
         background_events: mpsc::Receiver<BackgroundEvent>,
     ) -> Self {
+        let experience_controller = ExperienceController::new().await;
+        let skills_controller = SkillsController::new();
+        let _project_controller = ProjectController::new().await;
+
+        let background_controller = BackgroundController::new();
+        let mut panel_controller = PanelController::new();
+
         let frame_metadata = FrameMetadata::new(&gpu.device, canvas.size(), IVec2::ZERO);
 
         let background = gpu.device.create_texture(&wgpu::TextureDescriptor {
@@ -109,78 +122,45 @@ impl Background {
         let grid_metadata = GridMetadata::new(&gpu.device, &frame_metadata);
         let grid_state = GridState::new(&gpu.device, &grid_metadata);
 
-        let window = web_sys::window().expect_throw("window");
-        let document = window.document().expect_throw("document");
-
-        let panels = document
-            .get_elements_by_class_name("panel")
-            .iter()
-            .map(|el| el.dyn_into::<web_sys::HtmlElement>().unwrap_throw())
-            .collect::<Vec<_>>();
-
         let frame_timer = web_time::Instant::now();
 
         let mouse = Mouse::new(frame_metadata.resolution().as_vec2() / 2.0);
 
-        let mut meta_shapes = MetaShapes::new(&gpu.device, 1, panels.len());
-
-        // let mut meta_shapes = MetaShapes::new(&gpu.device, 2, 1, 1);
-        // meta_shapes.balls_mut()[1] = MetaBall {
-        //     position: vec2(200.0, 200.0),
-        //     radius: 75.0,
-        // };
-        // meta_shapes.lines_mut()[0] = MetaLine {
-        //     start: vec2(600.0, 100.0),
-        //     end: vec2(700.0, 400.0),
-        //     radius: 36.0,
-        // };
-        // meta_shapes.boxes_mut()[0] = MetaBox {
-        //     min: vec2(0.0, 1300.0),
-        //     max: vec2(800.0, 2100.0),
-        //     radius: 48.0,
-        // };
+        let meta_shapes = MetaShapes::new_with_controller(&gpu.device, &mut panel_controller);
 
         const CELL_SIZE: u32 = 4;
         let meta_field = MetaField::new(&gpu.device, &frame_metadata, CELL_SIZE);
 
-        let line_segments = LineSegments::new(&gpu.device, &meta_field);
+        // let line_segments = LineSegments::new(&gpu.device, &meta_field);
         let quads = Quads::new(&gpu.device, &meta_field);
 
-        let background_svg_renderer =
-            BackgroundSvgRenderer::new(&gpu.device, &frame_metadata, gpu.config.format);
+        let skills_renderer =
+            BackgroundSvgRenderer::new_skills(&gpu.device, gpu.config.format).await;
 
-        let zero_one_background_renderer = BackgroundImageRenderer::new(
-            &gpu.device,
-            &gpu.queue,
-            gpu.config.format,
-            include_bytes!("../assets/zero_one.webp"),
-        );
+        let zero_one_background_renderer =
+            BackgroundImageRenderer::new_zero_one(&gpu.device, &gpu.queue, gpu.config.format).await;
 
-        let skills_background_renderer = BackgroundImageRenderer::new(
-            &gpu.device,
-            &gpu.queue,
-            gpu.config.format,
-            include_bytes!("../assets/skills.webp"),
-        );
+        let skills_background_renderer =
+            BackgroundImageRenderer::new_skills(&gpu.device, &gpu.queue, gpu.config.format).await;
 
         let blur = GaussianBlurPipeline::new(&gpu.device, &frame_metadata, gpu.config.format);
 
-        let grid_processor = GridProcessor::new(
-            &gpu.device,
-            &frame_metadata,
-            &grid_metadata,
-            &delta_time,
-            &grid_state,
-            mouse.position(),
-        );
+        // let grid_processor = GridProcessor::new(
+        //     &gpu.device,
+        //     &frame_metadata,
+        //     &grid_metadata,
+        //     &delta_time,
+        //     &grid_state,
+        //     mouse.position(),
+        // );
 
-        let grid_renderer = GridRenderer::new(
-            &gpu.device,
-            &frame_metadata,
-            &grid_metadata,
-            &grid_state,
-            gpu.config.format,
-        );
+        // let grid_renderer = GridRenderer::new(
+        //     &gpu.device,
+        //     &frame_metadata,
+        //     &grid_metadata,
+        //     &grid_state,
+        //     gpu.config.format,
+        // );
 
         let meta_field_processor =
             MetaFieldProcessor::new(&gpu.device, &frame_metadata, &meta_shapes, &meta_field);
@@ -216,9 +196,6 @@ impl Background {
 
         let surface_blitter = TextureBlitter::new(&gpu.device, gpu.config.format);
 
-        let mut panel_controller = PanelController::new(panels, window.scroll_pos());
-        panel_controller.resize(&mut meta_shapes, window.scroll_pos());
-
         Self {
             gpu,
             background_events,
@@ -226,12 +203,12 @@ impl Background {
             fps_display_counter: 0,
             mouse,
 
-            background_svg_renderer,
+            skills_renderer,
             zero_one_background_renderer,
             skills_background_renderer,
             blur,
-            grid_processor,
-            grid_renderer,
+            // grid_processor,
+            // grid_renderer,
             meta_field_processor,
             meta_field_renderer,
             marching_squares_processor,
@@ -246,10 +223,13 @@ impl Background {
             grid_metadata,
             meta_shapes,
             meta_field,
-            line_segments,
+            // line_segments,
             quads,
 
             panel_controller,
+            experience_controller,
+            background_controller,
+            skills_controller,
         }
     }
 
@@ -267,7 +247,9 @@ impl Background {
         self.fps_display_counter += 1;
         if self.fps_display_counter >= 60 {
             let fps = 1.0 / delta_time;
-            web_sys::console::log_1(&format!("Background FPS: {:.2}", fps).into());
+            if cfg!(debug_assertions) {
+                log::info!("Background FPS: {:.2}", fps);
+            }
             self.fps_display_counter = 0;
         }
     }
@@ -322,6 +304,8 @@ impl Background {
             view_formats: &[],
         });
 
+        self.experience_controller.resize();
+
         self.grid_metadata
             .update(&self.gpu.queue, &self.frame_metadata);
 
@@ -334,25 +318,22 @@ impl Background {
         self.meta_field
             .resize(&self.gpu.device, &self.frame_metadata);
 
-        self.background_svg_renderer
-            .resize(&self.gpu.device, &self.frame_metadata);
-
         self.blur.resize(&self.gpu.device, &self.frame_metadata);
 
-        self.grid_processor.recreate_bind_group(
-            &self.gpu.device,
-            &self.frame_metadata,
-            &self.grid_metadata,
-            &self.delta_time,
-            &self.grid_state,
-        );
+        // self.grid_processor.recreate_bind_group(
+        //     &self.gpu.device,
+        //     &self.frame_metadata,
+        //     &self.grid_metadata,
+        //     &self.delta_time,
+        //     &self.grid_state,
+        // );
 
-        self.grid_renderer.recreate_bind_group(
-            &self.gpu.device,
-            &self.frame_metadata,
-            &self.grid_metadata,
-            &self.grid_state,
-        );
+        // self.grid_renderer.recreate_bind_group(
+        //     &self.gpu.device,
+        //     &self.frame_metadata,
+        //     &self.grid_metadata,
+        //     &self.grid_state,
+        // );
 
         self.meta_field_processor.recreate_bind_group(
             &self.gpu.device,
@@ -391,21 +372,22 @@ impl Background {
     }
 
     fn handle_update(&mut self, delta_time: f32) {
-        let window = web_sys::window().expect_throw("window");
-
-        self.frame_metadata
-            .update(&self.gpu.queue, self.gpu.config.size(), window.scroll_pos());
+        self.frame_metadata.update(
+            &self.gpu.queue,
+            self.gpu.config.size(),
+            web_sys::window().expect_throw("window").scroll_pos(),
+        );
 
         self.delta_time.update(&self.gpu.queue, delta_time);
 
         self.mouse.update(&self.frame_metadata, delta_time);
 
-        self.grid_processor.update_target(
-            &self.gpu.queue,
-            &self.frame_metadata,
-            &self.mouse,
-            delta_time,
-        );
+        // self.grid_processor.update_target(
+        //     &self.gpu.queue,
+        //     &self.frame_metadata,
+        //     &self.mouse,
+        //     delta_time,
+        // );
 
         self.panel_controller
             .update(&mut self.meta_shapes, delta_time);
@@ -413,11 +395,16 @@ impl Background {
         self.meta_shapes.balls_mut()[0] = MetaBall {
             center: self.mouse.position(),
             radius: 18.0,
-            ..Default::default()
+            hidden: if self.mouse.hidden() { 1 } else { 0 },
         };
 
         // TODO: Update only if needed
         self.meta_shapes.ensure_buffer(&self.gpu.queue);
+
+        self.background_controller
+            .update(&self.frame_metadata, &self.zero_one_background_renderer);
+        self.experience_controller.update();
+        self.skills_controller.update();
     }
 
     fn should_render(&self) -> bool {
@@ -470,7 +457,7 @@ impl Background {
                 &mut encoder,
                 &view,
                 &self.frame_metadata,
-                0,
+                self.background_controller.zero_one_position().as_ivec2(),
             );
 
             self.skills_background_renderer.render(
@@ -479,17 +466,18 @@ impl Background {
                 &mut encoder,
                 &view,
                 &self.frame_metadata,
-                self.skills_background_renderer.size().y as i32 / 2,
+                self.background_controller.skills_position().as_ivec2(),
             );
 
-            // self.background_svg_renderer.render(
-            //     &self.gpu.device,
-            //     &self.gpu.queue,
-            //     &mut encoder,
-            //     &view,
-            //     &self.frame_metadata,
-            //     &self.mouse,
-            // );
+            self.skills_renderer.render(
+                &self.gpu.device,
+                &self.gpu.queue,
+                &mut encoder,
+                &view,
+                &self.frame_metadata,
+                self.skills_controller.top_left().as_ivec2(),
+                self.skills_controller.bottom_right().as_ivec2(),
+            );
 
             // self.grid_processor
             //     .process(&mut encoder, self.grid_metadata.resolution());

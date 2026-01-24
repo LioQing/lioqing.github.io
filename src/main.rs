@@ -65,7 +65,7 @@ fn main() {
             let gpu = Gpu::new(canvas.clone()).await;
 
             let (tx, rx) = mpsc::channel();
-            let mut background = Background::new(gpu, canvas.clone(), rx);
+            let mut background = Background::new(gpu, canvas.clone(), rx).await;
             add_event_listener!(window, "mousemove", {
                 let tx = tx.clone();
                 move |event: web_sys::MouseEvent| {
