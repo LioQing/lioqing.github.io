@@ -3,7 +3,7 @@ use std::sync::mpsc;
 use ahash::HashMap;
 use glam::*;
 use strum::IntoDiscriminant;
-use wasm_bindgen::UnwrapThrowExt as _;
+use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
 
 use crate::{
     controller::{
@@ -265,7 +265,13 @@ impl Background {
 
     fn handle_resize(&mut self) {
         let window = web_sys::window().expect_throw("window");
-        let size = window.size().as_uvec2();
+        let document = window.document().expect_throw("document");
+        let canvas = document
+            .get_element_by_id("background")
+            .expect_throw("background canvas")
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .expect_throw("canvas element");
+        let size = canvas.size();
         self.gpu.config.width = size.x;
         self.gpu.config.height = size.y;
 
