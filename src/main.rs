@@ -66,9 +66,13 @@ fn main() {
 
             let (tx, rx) = mpsc::channel();
             let mut background = Background::new(gpu, canvas.clone(), rx).await;
-            add_event_listener!(window, "mousemove", {
+            add_event_listener!(window, "pointermove", {
                 let tx = tx.clone();
-                move |event: web_sys::MouseEvent| {
+                move |event: web_sys::PointerEvent| {
+                    if event.pointer_type() != "mouse" {
+                        return;
+                    }
+
                     if let Err(e) = tx.send(BackgroundEvent::MouseMove(event.client_position())) {
                         log::error!("Failed to send mouse move event: {e}");
                     }

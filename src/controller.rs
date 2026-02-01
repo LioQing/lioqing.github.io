@@ -538,7 +538,7 @@ impl ProjectController {
         format!(
             "
             <div
-                class=\"panel sized-panel\"
+                class=\"panel interactive-panel\"
                 style=\"display: flex; flex-direction: column; width: 100%;\"
             >
                 <div
