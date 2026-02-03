@@ -6,10 +6,7 @@ use strum::IntoDiscriminant;
 use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
 
 use crate::{
-    controller::{
-        BackgroundController, ExperienceController, PanelController, ProjectController,
-        SkillsController,
-    },
+    controller::{BackgroundController, PanelController, SkillsController},
     delta_time::DeltaTime,
     ext::{CanvasExt as _, SurfaceConfigurationExt as _, Vec4Ext, WindowExt},
     frame::FrameMetadata,
@@ -49,15 +46,13 @@ pub struct Background {
     mouse: Mouse,
 
     // Controller
-    experience_controller: ExperienceController,
     skills_controller: SkillsController,
     background_controller: BackgroundController,
     panel_controller: PanelController,
 
     // Pipelines
     skills_renderer: BackgroundSvgRenderer,
-    zero_one_background_renderer: BackgroundImageRenderer,
-    skills_background_renderer: BackgroundImageRenderer,
+    background_renderer: BackgroundImageRenderer,
     blur: GaussianBlurPipeline,
     // grid_processor: GridProcessor,
     // grid_renderer: GridRenderer,
@@ -86,9 +81,7 @@ impl Background {
         canvas: web_sys::HtmlCanvasElement,
         background_events: mpsc::Receiver<BackgroundEvent>,
     ) -> Self {
-        let experience_controller = ExperienceController::new().await;
         let skills_controller = SkillsController::new();
-        let _project_controller = ProjectController::new().await;
 
         let background_controller = BackgroundController::new();
         let mut panel_controller = PanelController::new();
@@ -131,11 +124,9 @@ impl Background {
         let skills_renderer =
             BackgroundSvgRenderer::new_skills(&gpu.device, gpu.config.format).await;
 
-        let zero_one_background_renderer =
-            BackgroundImageRenderer::new_zero_one(&gpu.device, &gpu.queue, gpu.config.format).await;
-
-        let skills_background_renderer =
-            BackgroundImageRenderer::new_skills(&gpu.device, &gpu.queue, gpu.config.format).await;
+        let background_renderer =
+            BackgroundImageRenderer::new_background(&gpu.device, &gpu.queue, gpu.config.format)
+                .await;
 
         let blur = GaussianBlurPipeline::new(&gpu.device, &frame_metadata, gpu.config.format);
 
@@ -198,8 +189,7 @@ impl Background {
             mouse,
 
             skills_renderer,
-            zero_one_background_renderer,
-            skills_background_renderer,
+            background_renderer,
             blur,
             // grid_processor,
             // grid_renderer,
@@ -221,7 +211,6 @@ impl Background {
             quads,
 
             panel_controller,
-            experience_controller,
             background_controller,
             skills_controller,
         }
@@ -303,8 +292,6 @@ impl Background {
                 | wgpu::TextureUsages::RENDER_ATTACHMENT,
             view_formats: &[],
         });
-
-        self.experience_controller.resize();
 
         self.grid_metadata
             .update(&self.gpu.queue, &self.frame_metadata);
@@ -401,9 +388,7 @@ impl Background {
         // TODO: Update only if needed
         self.meta_shapes.ensure_buffer(&self.gpu.queue);
 
-        self.background_controller
-            .update(&self.frame_metadata, &self.zero_one_background_renderer);
-        self.experience_controller.update();
+        self.background_controller.update(&self.frame_metadata);
         self.skills_controller.update();
     }
 
@@ -451,22 +436,13 @@ impl Background {
                 });
             }
 
-            self.zero_one_background_renderer.render(
+            self.background_renderer.render(
                 &self.gpu.device,
                 &self.gpu.queue,
                 &mut encoder,
                 &view,
                 &self.frame_metadata,
-                self.background_controller.zero_one_position().as_ivec2(),
-            );
-
-            self.skills_background_renderer.render(
-                &self.gpu.device,
-                &self.gpu.queue,
-                &mut encoder,
-                &view,
-                &self.frame_metadata,
-                self.background_controller.skills_position().as_ivec2(),
+                self.background_controller.position().as_ivec2(),
             );
 
             self.skills_renderer.render(

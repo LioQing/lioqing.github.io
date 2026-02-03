@@ -46,71 +46,69 @@ fn main() {
 
     console_error_panic_hook::set_once();
 
-    event_listeners::init();
-
     let window = web_sys::window().unwrap_throw();
 
     let document = window.document().unwrap_throw();
 
     Theme::set_current(Theme::Dark);
-    {
-        let document = document.clone();
-        wasm_bindgen_futures::spawn_local(async move {
-            let canvas = document
-                .get_element_by_id("background")
-                .unwrap_throw()
-                .dyn_into::<web_sys::HtmlCanvasElement>()
-                .unwrap_throw();
 
-            let gpu = Gpu::new(canvas.clone()).await;
+    wasm_bindgen_futures::spawn_local(async move {
+        event_listeners::init().await;
 
-            let (tx, rx) = mpsc::channel();
-            let mut background = Background::new(gpu, canvas.clone(), rx).await;
-            add_event_listener!(window, "pointermove", {
-                let tx = tx.clone();
-                move |event: web_sys::PointerEvent| {
-                    if event.pointer_type() != "mouse" {
-                        return;
-                    }
+        let canvas = document
+            .get_element_by_id("background")
+            .unwrap_throw()
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .unwrap_throw();
 
-                    if let Err(e) = tx.send(BackgroundEvent::MouseMove(event.client_position())) {
-                        log::error!("Failed to send mouse move event: {e}");
-                    }
+        let gpu = Gpu::new(canvas.clone()).await;
+
+        let (tx, rx) = mpsc::channel();
+        let mut background = Background::new(gpu, canvas.clone(), rx).await;
+        add_event_listener!(window, "pointermove", {
+            let tx = tx.clone();
+            move |event: web_sys::PointerEvent| {
+                if event.pointer_type() != "mouse" {
+                    return;
                 }
-            }; FnMut(_));
-            add_event_listener!(window.visual_viewport().unwrap_throw(), "resize", {
-                let tx = tx.clone();
+
+                if let Err(e) = tx.send(BackgroundEvent::MouseMove(event.client_position())) {
+                    log::error!("Failed to send mouse move event: {e}");
+                }
+            }
+        }; FnMut(_));
+        add_event_listener!(window.visual_viewport().unwrap_throw(), "resize", {
+            let tx = tx.clone();
+            move || {
+                if let Err(e) = tx.send(BackgroundEvent::Resize) {
+                    log::error!("Failed to send resize event: {e}");
+                }
+            }
+        }; FnMut());
+
+        log::debug!("Background initialized");
+
+        document
+            .get_element_by_id("loading-cover")
+            .unwrap_throw()
+            .set_attribute("style", "display: none;")
+            .unwrap_throw();
+
+        let update = Rc::<OnceCell<Closure<dyn FnMut()>>>::default();
+        update
+            .set(Closure::wrap(Box::new({
+                let update = update.clone();
+                let window = window.clone();
                 move || {
-                    if let Err(e) = tx.send(BackgroundEvent::Resize) {
-                        log::error!("Failed to send resize event: {e}");
-                    }
+                    background.update();
+                    window
+                        .request_animation_frame(update.get().unwrap().as_ref().unchecked_ref())
+                        .unwrap_throw();
                 }
-            }; FnMut());
-
-            log::debug!("Background initialized");
-
-            document
-                .get_element_by_id("loading-cover")
-                .unwrap_throw()
-                .set_attribute("style", "display: none;")
-                .unwrap_throw();
-
-            let update = Rc::<OnceCell<Closure<dyn FnMut()>>>::default();
-            update
-                .set(Closure::wrap(Box::new({
-                    let update = update.clone();
-                    let window = window.clone();
-                    move || {
-                        background.update();
-                        window
-                            .request_animation_frame(update.get().unwrap().as_ref().unchecked_ref())
-                            .unwrap_throw();
-                    }
-                }) as Box<dyn FnMut()>))
-                .unwrap_throw();
-            window
-                .request_animation_frame(update.get().unwrap_throw().as_ref().unchecked_ref())
-                .unwrap_throw();
-        });
-    }
+            }) as Box<dyn FnMut()>))
+            .unwrap_throw();
+        window
+            .request_animation_frame(update.get().unwrap_throw().as_ref().unchecked_ref())
+            .unwrap_throw();
+    });
 }

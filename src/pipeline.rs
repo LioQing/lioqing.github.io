@@ -545,36 +545,14 @@ pub struct BackgroundImageRenderer {
 }
 
 impl BackgroundImageRenderer {
-    pub async fn new_zero_one(
+    pub async fn new_background(
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         texture_format: wgpu::TextureFormat,
     ) -> Self {
         let window = web_sys::window().expect_throw("window");
 
-        let response = JsFuture::from(window.fetch_with_str("zero_one.webp"))
-            .await
-            .unwrap_throw()
-            .dyn_into::<web_sys::Response>()
-            .unwrap_throw();
-        let bytes = JsFuture::from(response.array_buffer().unwrap_throw())
-            .await
-            .unwrap_throw()
-            .dyn_into::<js_sys::ArrayBuffer>()
-            .unwrap_throw();
-        let bytes = js_sys::Uint8Array::new(&bytes).to_vec();
-
-        Self::new(device, queue, texture_format, &bytes)
-    }
-
-    pub async fn new_skills(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        texture_format: wgpu::TextureFormat,
-    ) -> Self {
-        let window = web_sys::window().expect_throw("window");
-
-        let response = JsFuture::from(window.fetch_with_str("skills.webp"))
+        let response = JsFuture::from(window.fetch_with_str("background.webp"))
             .await
             .unwrap_throw()
             .dyn_into::<web_sys::Response>()

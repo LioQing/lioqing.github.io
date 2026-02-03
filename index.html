@@ -33,9 +33,8 @@
     <link data-trunk rel="copy-file" href="assets/LI-In-Bug.png" />
     <link data-trunk rel="copy-file" href="assets/experiences.json" />
     <link data-trunk rel="copy-file" href="assets/projects.json" />
-    <link data-trunk rel="copy-file" href="assets/zero_one.webp" />
-    <link data-trunk rel="copy-file" href="assets/skills.webp" />
     <link data-trunk rel="copy-file" href="assets/skills.svg" />
+    <link data-trunk rel="copy-file" href="assets/background.webp" />
     <link data-trunk rel="copy-dir" href="projects" />
 
     <link rel="manifest" href="manifest.json" />
@@ -83,6 +82,7 @@
         font-weight: 400;
         font-style: normal;
         font-variation-settings: "wdth" 100;
+        margin: 0;
       }
 
       h1 {
@@ -134,6 +134,22 @@
         height: 100%;
       }
 
+      .background-image {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        position: relative;
+        top: 0;
+        left: calc(50% - 36px); /* to compensate for main padding */
+        width: max(100dvw, 2560px / 2); /* 2560 is the image width */
+        transform: translateY(-50%);
+        z-index: -1;
+        object-fit: cover;
+      }
+
       .name {
         display: inline-block;
         text-align: center;
@@ -161,12 +177,66 @@
       }
 
       .panel {
+        /* background-color: #11111144;
+        box-shadow:
+          0 10px 22px rgba(0, 0, 0, 0.22),
+          0 2px 5px rgba(0, 0, 0, 0.14);
+        backdrop-filter: blur(8px);
+        transition: all 0.3s ease-in-out; */
         border-radius: 36px;
+        /* position: relative;
+        overflow: hidden; */
       }
+
+      /* .panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        background:
+          radial-gradient(
+            140% 120% at 0% 0%,
+            rgba(255, 255, 255, 0.55) 0%,
+            rgba(255, 255, 255, 0.18) 22%,
+            rgba(255, 255, 255, 0.08) 36%,
+            rgba(255, 255, 255, 0) 60%
+          ),
+          radial-gradient(
+            120% 120% at 100% 100%,
+            rgba(255, 255, 255, 0.35) 0%,
+            rgba(255, 255, 255, 0.12) 28%,
+            rgba(255, 255, 255, 0) 60%
+          );
+        mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        -webkit-mask:
+          linear-gradient(#000 0 0) content-box,
+          linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        -webkit-mask-composite: xor;
+        padding: 1.5px;
+        opacity: 0.85;
+      } */
 
       .interactive-panel {
         -webkit-tap-highlight-color: transparent;
       }
+
+      /* .interactive-panel:hover {
+        box-shadow:
+          0 14px 28px rgba(0, 0, 0, 0.26),
+          0 3px 8px rgba(0, 0, 0, 0.16);
+        transform: scale(1.08);
+      }
+
+      .interactive-panel.project-item-panel:hover {
+        box-shadow:
+          0 12px 24px rgba(0, 0, 0, 0.24),
+          0 3px 7px rgba(0, 0, 0, 0.15);
+        transform: scale(1.03);
+      } */
 
       .about-me {
         max-width: 500px;
@@ -539,6 +609,14 @@
           </div>
         </div>
       </section>
+
+      <!-- <div style="width: 0; height: 0">
+        <img
+          src="background.webp"
+          alt="Background Image"
+          class="background-image"
+        />
+      </div> -->
 
       <section style="margin-top: 20vh">
         <div class="section-header">

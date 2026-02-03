@@ -8,7 +8,7 @@ use crate::{
     ext::{DomRectExt as _, HtmlCollectionExt as _, MouseEventExt as _},
 };
 
-pub fn init() {
+pub async fn init() {
     let window = web_sys::window().unwrap_throw();
 
     let document = window.document().unwrap_throw();
@@ -251,4 +251,467 @@ pub fn init() {
     //         }; FnMut());
     //     }
     // }
+
+    // Projects
+    {
+        #[derive(Debug, Clone, serde::Deserialize)]
+        struct ProjectLink {
+            label: String,
+            url: String,
+        }
+
+        #[derive(Debug, Clone, serde::Deserialize)]
+        struct ProjectData {
+            title: String,
+            tags: Vec<String>,
+            year: u32,
+            month: u32,
+            subtitle: String,
+            description: String,
+            image_url: String,
+            links: Vec<ProjectLink>,
+        }
+
+        let window = web_sys::window().expect_throw("window");
+        let document = window.document().expect_throw("document");
+
+        let element = document
+            .get_element_by_id("projects")
+            .unwrap_throw()
+            .dyn_into::<web_sys::HtmlElement>()
+            .unwrap_throw();
+
+        let response = JsFuture::from(window.fetch_with_str("projects.json"))
+            .await
+            .unwrap_throw()
+            .dyn_into::<web_sys::Response>()
+            .unwrap_throw();
+        let json = JsFuture::from(response.json().unwrap_throw())
+            .await
+            .unwrap_throw();
+        let projects = serde_wasm_bindgen::from_value::<Vec<ProjectData>>(json).unwrap_throw();
+
+        let html = render_project_list(&projects);
+        element.set_inner_html(&html);
+
+        let details = (0..projects.len())
+            .map(|i| {
+                document
+                    .get_element_by_id(&format!("project-details-{i}"))
+                    .unwrap_throw()
+                    .dyn_into::<web_sys::HtmlElement>()
+                    .unwrap_throw()
+            })
+            .collect::<Vec<_>>();
+
+        let items = (0..projects.len())
+            .map(|i| {
+                document
+                    .get_element_by_id(&format!("project-item-{i}"))
+                    .unwrap_throw()
+                    .dyn_into::<web_sys::HtmlElement>()
+                    .unwrap_throw()
+            })
+            .collect::<Vec<_>>();
+
+        for (i, item) in items.into_iter().enumerate() {
+            add_event_listener!(item, "click", {
+                    let details = details.clone();
+                    move |_event: web_sys::Event| {
+                        for (idx, detail) in details.iter().enumerate() {
+                            if idx == i {
+                                let is_expanded = detail
+                                    .get_attribute("data-expanded")
+                                    .as_deref()
+                                    == Some("true");
+                                set_project_details_expanded(
+                                    detail,
+                                    !is_expanded,
+                                );
+                            } else {
+                                set_project_details_expanded(detail, false);
+                            }
+                        }
+                    }
+                }; FnMut(_));
+        }
+
+        fn render_project_list(projects: &[ProjectData]) -> String {
+            let items = projects
+                .iter()
+                .enumerate()
+                .map(|(i, project)| render_project_list_item(i, project))
+                .collect::<String>();
+
+            format!(
+                "
+                <div style=\"
+                    display: flex;
+                    flex-direction: column;
+                    gap: 36px;
+                \">
+                    {items}
+                </div>
+                "
+            )
+        }
+
+        fn render_project_list_item(index: usize, project: &ProjectData) -> String {
+            let tags_html = render_project_tags(&project.tags);
+            let date = format!("{} {}", show_month(project.month), project.year);
+            let details_html = render_project_details(project);
+
+            format!(
+                "
+                <div
+                    class=\"panel interactive-panel project-item-panel\"
+                    style=\"display: flex; flex-direction: column; width: 100%;\"
+                >
+                    <div
+                        id=\"project-item-{index}\"
+                        style=\"cursor: pointer; padding: 24px 36px;\"
+                    >
+                        <p>{date}</p>
+                        <h3>{}</h3>
+                        <p>{}</p>
+                        <div style=\"
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                            margin-top: 6px;
+                        \">{tags_html}</div>
+                    </div>
+                    <div
+                        id=\"project-details-{index}\"
+                        data-expanded=\"false\"
+                        style=\"
+                            height: 0px;
+                            opacity: 0;
+                            overflow: hidden;
+                            margin-top: 0px;
+                            transition: ease-in-out 0.3s all;
+                        \"
+                    >
+                        {details_html}
+                    </div>
+                </div>
+                ",
+                project.title, project.subtitle
+            )
+        }
+
+        fn render_project_details(project: &ProjectData) -> String {
+            let links_html = render_project_links(&project.links);
+
+            format!(
+                "
+                <div style=\"
+                    padding: 0px 36px 36px 36px;
+                    display: flex;
+                    flex-direction: row;
+                    gap: 24px;
+                    flex-wrap: wrap;
+                \">
+                    <img src=\"projects/{}\" alt=\"{}\" style=\"
+                        width: max(480px, 40%);
+                        height: auto;
+                        border-radius: 12px;
+                    \" />
+                    <div style=\"
+                        flex: 1;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
+                        min-width: 200px;
+                    \">
+                        <p>{}</p>
+                        <div style=\"
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 12px;
+                        \">{links_html}</div>
+                    </div>
+                </div>
+                ",
+                project.image_url, project.title, project.description
+            )
+        }
+
+        fn set_project_details_expanded(detail: &web_sys::HtmlElement, expanded: bool) {
+            let height = if expanded {
+                format!("{}px", detail.scroll_height())
+            } else {
+                "0px".to_string()
+            };
+            let opacity = if expanded { "1" } else { "0" };
+            let margin_top = if expanded { "12px" } else { "0px" };
+
+            if let Err(e) = detail.style().set_property("height", &height) {
+                log::error!(
+                    "Failed to update project details height: {}",
+                    e.as_string().unwrap_or("Unknown error".to_string())
+                );
+            }
+            if let Err(e) = detail.style().set_property("opacity", opacity) {
+                log::error!(
+                    "Failed to update project details opacity: {}",
+                    e.as_string().unwrap_or("Unknown error".to_string())
+                );
+            }
+            if let Err(e) = detail.style().set_property("margin-top", margin_top) {
+                log::error!(
+                    "Failed to update project details margin: {}",
+                    e.as_string().unwrap_or("Unknown error".to_string())
+                );
+            }
+            if let Err(e) =
+                detail.set_attribute("data-expanded", if expanded { "true" } else { "false" })
+            {
+                log::error!(
+                    "Failed to update project details state: {}",
+                    e.as_string().unwrap_or("Unknown error".to_string())
+                );
+            }
+        }
+
+        fn render_project_tags(tags: &[String]) -> String {
+            tags.iter()
+                .map(|tag| {
+                    format!(
+                        "<span style=\"
+                            padding: 4px 8px;
+                            border-radius: 999px;
+                            background: rgba(255, 255, 255, 0.08);
+                            font-size: 0.85em;
+                        \">{}</span>",
+                        tag
+                    )
+                })
+                .collect::<String>()
+        }
+
+        fn render_project_links(links: &[ProjectLink]) -> String {
+            links
+                .iter()
+                .map(|link| {
+                    format!(
+                        "<a href=\"{}\" target=\"_blank\" rel=\"noopener noreferrer\">{}</a>",
+                        link.url, link.label
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(" ")
+        }
+    }
+
+    // Experiences
+    {
+        #[derive(
+            Debug, Default, Clone, Copy, PartialEq, Eq, strum::Display, serde::Deserialize,
+        )]
+        #[strum(serialize_all = "lowercase")]
+        #[serde(rename_all = "lowercase")]
+        enum ExperienceFilter {
+            #[default]
+            Work,
+            Education,
+            Others,
+        }
+
+        #[derive(Debug, Clone, serde::Deserialize)]
+        struct ExperienceData {
+            name: String,
+            organization: String,
+            filter: ExperienceFilter,
+            start_year: u32,
+            start_month: u32,
+            end_year: Option<u32>,
+            end_month: Option<u32>,
+        }
+
+        #[derive(Debug, Clone)]
+        struct Experience {
+            data: ExperienceData,
+            element: web_sys::HtmlElement,
+        }
+
+        let window = web_sys::window().expect_throw("window");
+        let document = window.document().expect_throw("document");
+
+        let experiences_list = document
+            .get_element_by_id("experiences-list")
+            .unwrap_throw()
+            .dyn_into::<web_sys::HtmlElement>()
+            .unwrap_throw();
+
+        let response = JsFuture::from(window.fetch_with_str("experiences.json"))
+            .await
+            .unwrap_throw()
+            .dyn_into::<web_sys::Response>()
+            .unwrap_throw();
+        let json = JsFuture::from(response.json().unwrap_throw())
+            .await
+            .unwrap_throw();
+        let experiences =
+            serde_wasm_bindgen::from_value::<Vec<ExperienceData>>(json).unwrap_throw();
+
+        let html = render_experiences_list(&experiences);
+
+        experiences_list.set_inner_html(&html);
+
+        let experiences = experiences
+            .into_iter()
+            .enumerate()
+            .map(|(i, data)| {
+                let element = document
+                    .get_element_by_id(&format!("experience-{}", i))
+                    .unwrap_throw()
+                    .dyn_into::<web_sys::HtmlElement>()
+                    .unwrap_throw();
+
+                Experience { data, element }
+            })
+            .collect::<Vec<_>>();
+
+        let mut buttons = document
+            .get_elements_by_class_name("experiences-filter-button")
+            .iter()
+            .map(|el| el.dyn_into::<web_sys::HtmlElement>().unwrap_throw())
+            .map(|button| {
+                let id = button.id();
+                let filter = match id.as_str() {
+                    "experiences-work-filter" => ExperienceFilter::Work,
+                    "experiences-education-filter" => ExperienceFilter::Education,
+                    "experiences-others-filter" => ExperienceFilter::Others,
+                    _ => ExperienceFilter::Education,
+                };
+
+                (button, filter)
+            })
+            .collect::<Vec<_>>();
+
+        for (button, filter) in &buttons {
+            let filter = *filter;
+
+            add_event_listener!(button, "click", {
+                let mut buttons = buttons.clone();
+                let experiences = experiences.clone();
+                move |_: web_sys::Event| {
+                    update_buttons(&mut buttons, filter);
+                    update_elements(&experiences, filter);
+                }
+            }; FnMut(_));
+
+            add_event_listener!(button, "resize", {
+                let experiences = experiences.clone();
+                move |_: web_sys::Event| {
+                    update_elements(&experiences, filter);
+                }
+            }; FnMut(_));
+        }
+
+        update_buttons(&mut buttons, ExperienceFilter::default());
+        update_elements(&experiences, ExperienceFilter::default());
+
+        fn update_buttons(
+            buttons: &mut [(web_sys::HtmlElement, ExperienceFilter)],
+            filter: ExperienceFilter,
+        ) {
+            for (button, button_filter) in buttons {
+                let bottom = if *button_filter == filter {
+                    "-52px"
+                } else {
+                    "0px"
+                };
+
+                if let Err(e) = button.style().set_property("bottom", bottom) {
+                    log::error!(
+                        "Failed to update experience filter button position: {}",
+                        e.as_string().unwrap_or("Unknown error".to_string())
+                    );
+                }
+            }
+        }
+
+        fn update_elements(experiences: &[Experience], filter: ExperienceFilter) {
+            for (i, exp) in experiences.iter().enumerate() {
+                let (height, opacity) = if exp.data.filter == filter {
+                    ("auto", "1")
+                } else {
+                    ("0px", "0")
+                };
+
+                let height_result = exp.element.style().set_property("height", height);
+                let opacity_result = exp.element.style().set_property("opacity", opacity);
+
+                if let Err(e) = height_result.or(opacity_result) {
+                    log::error!(
+                        "Failed to update experience {i} display: {}",
+                        e.as_string().unwrap_or("Unknown error".to_string())
+                    );
+                }
+            }
+        }
+
+        fn render_experiences_list(experiences: &[ExperienceData]) -> String {
+            let experiences_html = render_experiences(experiences);
+
+            format!(
+                "
+                <div class=\"panel sized-panel\" style=\"padding: 12px 24px\">
+                    {}
+                </div>
+                ",
+                experiences_html
+            )
+        }
+
+        fn render_experiences(experiences: &[ExperienceData]) -> String {
+            experiences
+                .iter()
+                .enumerate()
+                .map(|(i, experience)| {
+                    let start_date = format!(
+                        "{} {}",
+                        show_month(experience.start_month),
+                        experience.start_year
+                    );
+                    let end_date = match (experience.end_year, experience.end_month) {
+                        (Some(year), Some(month)) => format!("{} {}", show_month(month), year),
+                        _ => "Present".to_string(),
+                    };
+                    format!(
+                        "
+                        <div id=\"experience-{}\" class=\"experience\">
+                            <div>
+                                <p>{} - {}</p>
+                                <h3>{}</h3>
+                                <p>{}</p>
+                            </div>
+                        </div>
+                        ",
+                        i, start_date, end_date, experience.name, experience.organization
+                    )
+                })
+                .collect::<String>()
+        }
+    }
+}
+
+fn show_month(month: u32) -> &'static str {
+    match month {
+        1 => "Jan",
+        2 => "Feb",
+        3 => "Mar",
+        4 => "Apr",
+        5 => "May",
+        6 => "Jun",
+        7 => "Jul",
+        8 => "Aug",
+        9 => "Sep",
+        10 => "Oct",
+        11 => "Nov",
+        12 => "Dec",
+        _ => "Unknown",
+    }
 }
