@@ -1,17 +1,41 @@
 use glam::*;
 use wasm_bindgen::{JsCast as _, UnwrapThrowExt as _};
 use wasm_bindgen_futures::JsFuture;
-use web_time::web;
 
-use crate::{
-    add_event_listener,
-    ext::{DomRectExt as _, HtmlCollectionExt as _, MouseEventExt as _},
-};
+use crate::{add_event_listener, ext::HtmlCollectionExt as _};
 
 pub async fn init() {
     let window = web_sys::window().unwrap_throw();
 
     let document = window.document().unwrap_throw();
+
+    // BG VFX link
+    {
+        let bgvfx_link = document
+            .get_element_by_id("bgvfx-link")
+            .unwrap_throw()
+            .dyn_into::<web_sys::HtmlElement>()
+            .unwrap_throw();
+        let window = window.clone();
+
+        add_event_listener!(bgvfx_link, "click", {
+            let window = window.clone();
+            move |_event: web_sys::Event| {
+                let Ok(location) = window.location().href() else {
+                    log::warn!("Failed to read current location for bgvfx");
+                    return;
+                };
+                let Ok(url) = web_sys::Url::new(&location) else {
+                    log::warn!("Failed to parse location for bgvfx");
+                    return;
+                };
+                url.search_params().set("bgvfx", "1");
+                if let Err(e) = window.location().set_href(&url.to_string().as_string().unwrap_throw()) {
+                    log::warn!("Failed to set bgvfx location: {e:?}");
+                }
+            }
+        }; FnMut(_));
+    }
 
     // Parallax
     {
@@ -35,8 +59,8 @@ pub async fn init() {
             .unwrap_throw()
             .dyn_into::<web_sys::HtmlElement>()
             .unwrap_throw();
-        let scroll_down_indicator_element = document
-            .get_element_by_id("scroll-down-indicator")
+        let title_overlay_element = document
+            .get_element_by_id("title-overlay")
             .unwrap_throw()
             .dyn_into::<web_sys::HtmlElement>()
             .unwrap_throw();
@@ -66,7 +90,7 @@ pub async fn init() {
                 parallax_y(&engineer_title_element, 1.8);
 
                 let indicator_opacity = (1.0 - scroll_y / 150.0).clamp(0.0, 1.0);
-                if let Err(e) = scroll_down_indicator_element.style().set_property(
+                if let Err(e) = title_overlay_element.style().set_property(
                     "opacity",
                     &indicator_opacity.to_string(),
                 ) {
@@ -695,6 +719,80 @@ pub async fn init() {
                 })
                 .collect::<String>()
         }
+    }
+}
+
+pub async fn cleanup_doc_for_bgvfx() {
+    let window = web_sys::window().unwrap_throw();
+    let document = window.document().unwrap_throw();
+
+    if let Some(element) = document.get_element_by_id("bgvfx-link") {
+        element.remove();
+    }
+
+    if let Some(element) = document.get_element_by_id("background-image") {
+        element.remove();
+    }
+
+    if let Some(element) = document.get_element_by_id("skill-icons") {
+        element.remove();
+    }
+
+    let style_sheets = document.style_sheets();
+
+    for sheet_index in 0..style_sheets.length() {
+        let Some(sheet) = style_sheets.item(sheet_index) else {
+            continue;
+        };
+
+        let css_sheet = match sheet.dyn_into::<web_sys::CssStyleSheet>() {
+            Ok(sheet) => sheet,
+            Err(_) => continue,
+        };
+
+        let rules = match css_sheet.css_rules() {
+            Ok(rules) => rules,
+            Err(e) => {
+                log::warn!("Failed to read css rules: {e:?}");
+                continue;
+            }
+        };
+
+        for rule_index in (0..rules.length()).rev() {
+            let Some(rule) = rules.item(rule_index) else {
+                continue;
+            };
+
+            let style_rule = match rule.dyn_into::<web_sys::CssStyleRule>() {
+                Ok(rule) => rule,
+                Err(_) => continue,
+            };
+
+            let selector = style_rule.selector_text();
+            let should_remove = matches!(
+                selector.as_str(),
+                ".interactive-panel:hover"
+                    | ".interactive-panel.project-item-panel:hover"
+                    | ".panel::before"
+                    | ".panel"
+            );
+
+            if should_remove && let Err(e) = css_sheet.delete_rule(rule_index) {
+                log::warn!("Failed to delete css rule {selector}: {e:?}");
+            }
+        }
+    }
+
+    let style = document
+        .create_element("style")
+        .expect_throw("style element");
+    style.set_text_content(Some(".panel { border-radius: 36px; }"));
+    if let Some(head) = document.head() {
+        if let Err(e) = head.append_child(&style) {
+            log::warn!("Failed to append cleanup style: {e:?}");
+        }
+    } else {
+        log::warn!("Failed to locate document head for cleanup style");
     }
 }
 

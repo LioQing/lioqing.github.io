@@ -50,10 +50,24 @@ fn main() {
 
     let document = window.document().unwrap_throw();
 
+    let search = window.location().search().unwrap_throw();
+    let params = web_sys::UrlSearchParams::new_with_str(&search).unwrap_throw();
+    let bgvfx_enabled = params.get("bgvfx") == Some("1".to_string());
+
     Theme::set_current(Theme::Dark);
 
     wasm_bindgen_futures::spawn_local(async move {
         event_listeners::init().await;
+
+        if !bgvfx_enabled {
+            log::debug!("Background VFX disabled");
+            document
+                .get_element_by_id("loading-cover")
+                .unwrap_throw()
+                .set_attribute("style", "display: none;")
+                .unwrap_throw();
+            return;
+        }
 
         let canvas = document
             .get_element_by_id("background")
@@ -87,6 +101,8 @@ fn main() {
         }; FnMut());
 
         log::debug!("Background initialized");
+
+        event_listeners::cleanup_doc_for_bgvfx().await;
 
         document
             .get_element_by_id("loading-cover")
