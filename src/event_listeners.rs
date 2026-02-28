@@ -547,8 +547,8 @@ pub async fn init() {
             name: String,
             organization: String,
             filter: ExperienceFilter,
-            start_year: u32,
-            start_month: u32,
+            start_year: Option<u32>,
+            start_month: Option<u32>,
             end_year: Option<u32>,
             end_month: Option<u32>,
         }
@@ -695,26 +695,32 @@ pub async fn init() {
                 .iter()
                 .enumerate()
                 .map(|(i, experience)| {
-                    let start_date = format!(
-                        "{} {}",
-                        show_month(experience.start_month),
-                        experience.start_year
-                    );
+                    let start_date = match (experience.start_year, experience.start_month) {
+                        (Some(year), Some(month)) => {
+                            Some(format!("{} {}", show_month(month), year))
+                        }
+                        _ => None,
+                    };
                     let end_date = match (experience.end_year, experience.end_month) {
                         (Some(year), Some(month)) => format!("{} {}", show_month(month), year),
                         _ => "Present".to_string(),
+                    };
+                    let date_range = if let Some(start_date) = start_date {
+                        format!("{} - {}", start_date, end_date)
+                    } else {
+                        end_date
                     };
                     format!(
                         "
                         <div id=\"experience-{}\" class=\"experience\">
                             <div>
-                                <p>{} - {}</p>
-                                <h3>{}</h3>
-                                <p>{}</p>
+                            <p>{}</p>
+                            <h3>{}</h3>
+                            <p>{}</p>
                             </div>
                         </div>
                         ",
-                        i, start_date, end_date, experience.name, experience.organization
+                        i, date_range, experience.name, experience.organization
                     )
                 })
                 .collect::<String>()

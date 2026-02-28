@@ -3,7 +3,7 @@ const quad_height: f32 = 18.0;
 const elevation_scale: f32 = 18.0;
 const frost_rgb: vec3<f32> = vec3<f32>(0.05);
 const frost_strength: f32 = 0.1;
-const frost_absorption: f32 = 0.005;
+const frost_absorption: f32 = 0.01;
 
 struct FrameMetadata {
     resolution: vec2<u32>,
