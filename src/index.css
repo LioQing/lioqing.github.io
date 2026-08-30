@@ -1,0 +1,184 @@
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant group-expanded (&:is(:where(.group-expanded) *));
+@custom-variant group-active (&:is(:where(.group):active *, :where(.group):focus *));
+
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-bg;
+  }
+}
+
+@font-face {
+  font-family: "Lio Font";
+  src: url("/Lio Font.ttf") format("truetype");
+}
+
+@layer components {
+  .section-hd {
+    @apply max-w-section relative mx-auto px-6 pt-2 pb-2;
+  }
+  .section-title {
+    @apply font-lio relative text-center text-[min(15vw,var(--text-9xl))] font-normal tracking-tight [-webkit-text-fill-color:transparent] [-webkit-text-stroke:1.5px_var(--color-border)] dark:[-webkit-text-fill-color:transparent] dark:[-webkit-text-stroke:1.5px_var(--color-border-dark)];
+  }
+  .section-title-shadow {
+    @apply font-lio text-accent absolute inset-2 top-[calc(0.5rem+0.08em)] left-[calc(0.5rem+0.08em)] -z-10 text-center text-[min(15vw,var(--text-9xl))] font-black tracking-tight transition-all select-none group-hover:top-[calc(0.5rem+0.12em)] group-hover:left-[calc(0.5rem+0.12em)] group-active:top-[calc(0.5rem+0.12em)] group-active:left-[calc(0.5rem+0.12em)];
+  }
+  .section-title-shadow-contrast {
+    @apply font-lio text-accent-contrast absolute inset-2 top-[calc(0.5rem-0.04em)] left-[calc(0.5rem-0.04em)] -z-10 text-center text-[min(15vw,var(--text-9xl))] font-bold tracking-tight transition-all select-none group-hover:top-[calc(0.5rem-0.06em)] group-hover:left-[calc(0.5rem-0.06em)] group-active:top-[calc(0.5rem-0.06em)] group-active:left-[calc(0.5rem-0.06em)];
+  }
+  .section-striped::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--background-image-striped);
+    mask-image: var(--section-mask);
+    -webkit-mask-image: var(--section-mask);
+  }
+  .section-div {
+    @apply border-border border-b;
+  }
+  .section-bd {
+    @apply max-w-section mx-auto px-12 pt-8 pb-12;
+  }
+  .tag {
+    @apply border-content-muted text-content-muted rounded-full border px-2 py-0.5 text-sm;
+  }
+  .link-btn {
+    @apply border-content-muted text-content-muted group-hover/link-btn:border-content-fg active:border-content-fg fill-content-muted group-hover/link-btn:fill-content-fg group-hover/link-btn:text-content-fg active:fill-content-fg active:text-content-fg bg-bg relative top-0 right-0 bottom-0 left-0 flex flex-row items-center gap-1 border py-1 pr-3 pl-3.5 text-sm no-underline transition-all group-hover/link-btn:-top-1.5 group-hover/link-btn:-right-1.5 group-hover/link-btn:-bottom-1.5 group-hover/link-btn:-left-1.5 active:-top-1.5 active:-right-1.5 active:-bottom-1.5 active:-left-1.5;
+  }
+  .link-btn-shadow {
+    @apply border-accent-red bg-striped-red border;
+  }
+  .project-card {
+    @apply border-border group-hover:border-border-active group-expanded:border-border-active group-expanded:-top-2 group-expanded:right-2 group-expanded:bottom-2 group-expanded:-left-2 group-expanded:backdrop-blur-xs relative inset-0 -top-px -right-px -bottom-px -left-px cursor-pointer border transition-all group-hover:-top-2 group-hover:right-2 group-hover:bottom-2 group-hover:-left-2 group-hover:backdrop-blur-xs;
+  }
+  .project-card-shadow {
+    @apply group-hover:border-accent-red group-expanded:border-accent-red absolute inset-0 -top-px -right-px -bottom-px -left-px border border-transparent transition-all;
+  }
+  .content-bd {
+    @apply text-content-fg selection:bg-accent-red text-lg selection:text-white;
+  }
+  .skill-item {
+    @apply relative;
+  }
+  .skill-name {
+    @apply text-content-fg relative z-0 inline-block px-4 pt-2 pb-3 text-center text-5xl font-black tracking-tight;
+  }
+  .skill-name-text {
+    @apply inline-block align-bottom whitespace-nowrap;
+  }
+  .skill-item.is-typing .skill-name-text {
+    @apply border-r-content-fg;
+    animation: skill-caret-blink 0.8s steps(1, end) infinite;
+  }
+  .skill-item.typing-done .skill-name-text {
+    @apply animate-none border-r-transparent;
+  }
+  @keyframes skill-caret-blink {
+    0%,
+    100% {
+      border-right-color: var(--color-content-fg);
+    }
+    50% {
+      border-right-color: transparent;
+    }
+  }
+  .skill-name::before,
+  .skill-name::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform-origin: left center;
+    clip-path: inset(0 100% 0 0);
+  }
+  .skill-name::before {
+    z-index: -1;
+    background: var(--color-accent);
+    transform: skewX(-14deg) scale(1.12);
+    transform-origin: center;
+  }
+  .skill-name::after {
+    z-index: -2;
+    background: var(--color-accent-contrast);
+    transform: translate(0.14em, 0.16em) skewX(-14deg) scale(1.12);
+    transform-origin: center;
+  }
+  .skill-item.typing-done .skill-name::before,
+  .skill-item.typing-done .skill-name::after {
+    clip-path: inset(0 0 0 0);
+    transition: clip-path 0.35s ease-in-out;
+  }
+  .skill-tag {
+    @apply border-border bg-bg text-content-fg relative border px-4 py-1 font-semibold;
+    box-shadow: 0.2em 0.2em 0 var(--color-accent);
+    opacity: 0;
+    transform: translateY(0.6em) rotate(var(--tag-tilt, 0deg)) scale(0.6);
+  }
+  .skill-item.typing-done .skill-tag {
+    opacity: 1;
+    transform: rotate(var(--tag-tilt, 0deg)) translateY(0) scale(1);
+    transition:
+      opacity 0.25s ease-out,
+      transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition-delay: var(--tag-delay, 0ms);
+  }
+}
+
+@theme {
+  /* Theme agnostic variables */
+  --font-lio: "Lio Font", sans-serif;
+  --color-accent-green: #24fb61;
+  --color-accent-red: #fb5264;
+
+  /* Themed variables */
+  --container-section: var(--container-5xl);
+  --background-image-striped: repeating-linear-gradient(
+    -45deg,
+    var(--color-border),
+    var(--color-border) 1px,
+    transparent 1.2px,
+    transparent 12px,
+    var(--color-border) 12.2px
+  );
+  --background-image-striped-dark: repeating-linear-gradient(
+    -45deg,
+    var(--color-border-dark),
+    var(--color-border-dark) 1px,
+    transparent 1.2px,
+    transparent 12px,
+    var(--color-border-dark) 12.2px
+  );
+  --background-image-striped-red: repeating-linear-gradient(
+    -45deg,
+    var(--color-accent-red),
+    var(--color-accent-red) 1px,
+    transparent 1.2px,
+    transparent 12px,
+    var(--color-accent-red) 12.2px
+  );
+  --color-bg: var(--color-neutral-100);
+  --color-bg-dark: var(--color-neutral-900);
+  --color-border: var(--color-neutral-400);
+  --color-border-dark: var(--color-neutral-700);
+  --color-border-active: var(--color-neutral-600);
+  --color-border-active-dark: var(--color-neutral-600);
+  --color-content-fg: var(--color-black);
+  --color-content-fg-dark: var(--color-white);
+  --color-content-muted: var(--color-neutral-600);
+  --color-content-muted-dark: var(--color-neutral-400);
+  --color-accent: var(--color-accent-green);
+  --color-accent-contrast: var(--color-accent-red);
+}
+
+.dark {
+  --background-image-striped: var(--background-image-striped-dark);
+  --color-bg: var(--color-bg-dark);
+  --color-border-active: var(--color-border-active-dark);
+  --color-content-muted: var(--color-content-muted-dark);
+  --color-content-fg: var(--color-content-fg-dark);
+  --color-border: var(--color-border-dark);
+  --color-accent: var(--color-accent-red);
+  --color-accent-contrast: var(--color-accent-green);
+}

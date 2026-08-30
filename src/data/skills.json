@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Rust",
+    "tags": ["WebAssembly", "Computer Graphics"]
+  },
+  {
+    "name": "C#",
+    "tags": ["Unity", "Entity Framework", "ASP.NET"]
+  },
+  {
+    "name": "Python",
+    "tags": ["AI", "Apache Spark"]
+  },
+  {
+    "name": "Cloud",
+    "tags": ["AWS", "Azure"]
+  },
+  {
+    "name": "Graphics Design",
+    "tags": ["Photoshop", "Illustrator", "Affinity"]
+  },
+  {
+    "name": "Blender",
+    "tags": ["3D Modelling", "Keyframe Animation"]
+  }
+]
