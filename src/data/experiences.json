@@ -2,28 +2,28 @@
   {
     "name": "Speaker \"3D Gaussian Splatting with Rust & WebGPU\"",
     "organization": "Global Open-Source Innovation Meetup (GOSIM) Hangzhou, RustChinaConf 2025",
-    "filter": "community",
+    "category": "community",
     "end_year": 2025,
     "end_month": 9
   },
   {
     "name": "Presenter \"3D Digital Twins: Bridging Desciplines and Growing Our Makerspace\"",
     "organization": "International Symposium on Academic Makerspace (ISAM), The University of Hong Kong (HKU), Innovation Wing Representative",
-    "filter": "community",
+    "category": "community",
     "end_year": 2025,
     "end_month": 8
   },
   {
     "name": "Software Engineer",
     "organization": "The Trade Desk",
-    "filter": "work",
+    "category": "work",
     "start_year": 2025,
     "start_month": 6
   },
   {
     "name": "Student Research Assistant for AI Historian Assistant & 3D Digital Twins Projects",
     "organization": "The University of Hong Kong (HKU), Innovation Wing AI Team",
-    "filter": "work",
+    "category": "work",
     "start_year": 2024,
     "start_month": 10,
     "end_year": 2025,
@@ -32,7 +32,7 @@
   {
     "name": "Google Developer Group Organizer",
     "organization": "Google Developer Group (GDG) on Campus The University of Hong Kong",
-    "filter": "community",
+    "category": "community",
     "start_year": 2024,
     "start_month": 10,
     "end_year": 2025,
@@ -41,7 +41,7 @@
   {
     "name": "Student Ambassador",
     "organization": "The University of Hong Kong (HKU)",
-    "filter": "community",
+    "category": "community",
     "start_year": 2023,
     "start_month": 10,
     "end_year": 2025,
@@ -50,7 +50,7 @@
   {
     "name": "Bachelor of Engineering in Computer Science Undergraduate Student",
     "organization": "The University of Hong Kong (HKU)",
-    "filter": "education",
+    "category": "education",
     "start_year": 2021,
     "start_month": 9,
     "end_year": 2025,
@@ -59,7 +59,7 @@
   {
     "name": "Simple Reinforcement Learning Driver Workshop Instructor",
     "organization": "St. Paul's College (SPC)",
-    "filter": "work",
+    "category": "work",
     "start_year": 2025,
     "start_month": 2,
     "end_year": 2025,
@@ -68,7 +68,7 @@
   {
     "name": "Software Engineer Intern",
     "organization": "The Trade Desk (TTD)",
-    "filter": "work",
+    "category": "work",
     "start_year": 2024,
     "start_month": 6,
     "end_year": 2024,
@@ -77,7 +77,7 @@
   {
     "name": "Student Interest Group Leader",
     "organization": "The University of Hong Kong (HKU), Innovation Wing GenNarrator AI Student Interest Group",
-    "filter": "community",
+    "category": "community",
     "start_year": 2023,
     "start_month": 12,
     "end_year": 2024,
@@ -86,7 +86,7 @@
   {
     "name": "Student Teaching Assistant",
     "organization": "The University of Hong Kong (HKU), Computer Science Department",
-    "filter": "work",
+    "category": "work",
     "start_year": 2022,
     "start_month": 9,
     "end_year": 2023,
@@ -95,7 +95,7 @@
   {
     "name": "Data Science Intern",
     "organization": "Asklora",
-    "filter": "work",
+    "category": "work",
     "start_year": 2023,
     "start_month": 6,
     "end_year": 2023,
@@ -104,7 +104,7 @@
   {
     "name": "Programming Team Tutor",
     "organization": "St. Paul's College (SPC)",
-    "filter": "work",
+    "category": "work",
     "start_year": 2023,
     "start_month": 3,
     "end_year": 2023,
@@ -113,7 +113,7 @@
   {
     "name": "IT Strategic Support Intern",
     "organization": "HKSAR Electrical & Mechanical Service Department",
-    "filter": "work",
+    "category": "work",
     "start_year": 2022,
     "start_month": 6,
     "end_year": 2022,
@@ -122,7 +122,7 @@
   {
     "name": "HKDSE Secondary School Student",
     "organization": "St. Paul's College (SPC)",
-    "filter": "education",
+    "category": "education",
     "start_year": 2015,
     "start_month": 9,
     "end_year": 2021,
@@ -131,7 +131,7 @@
   {
     "name": "Biology Society & Computer Society Committee Member",
     "organization": "St. Paul's College (SPC)",
-    "filter": "community",
+    "category": "community",
     "start_year": 2018,
     "start_month": 9,
     "end_year": 2021,
@@ -140,7 +140,7 @@
   {
     "name": "Rubik's Cube Club Committee Member",
     "organization": "St. Paul's College (SPC)",
-    "filter": "community",
+    "category": "community",
     "start_year": 2018,
     "start_month": 9,
     "end_year": 2019,
@@ -149,7 +149,7 @@
   {
     "name": "International General Certificate of Secondary Education (IGCSE) Spanish Language Student",
     "organization": "St. Paul's College (SPC) joint with HKU School of Modern Languages and Cultures",
-    "filter": "education",
+    "category": "education",
     "start_year": 2015,
     "start_month": 9,
     "end_year": 2019,

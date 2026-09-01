@@ -4,7 +4,7 @@ import skillsJson from "../data/skills.json";
 import type { Skill } from "../types";
 
 const skills = skillsJson as Skill[];
-const TYPING_STEP_MS = 55;
+const TYPING_STEP_MS = 100;
 
 export default function Skills() {
   const [typed, setTyped] = useState<number[]>(() => skills.map(() => 0));
@@ -42,7 +42,7 @@ export default function Skills() {
           }, TYPING_STEP_MS);
         });
       },
-      { threshold: 0.35, rootMargin: "0px 0px -12% 0px" }
+      { threshold: 0.5, rootMargin: "0px 0px 0px 0px" }
     );
     items.forEach((el) => observer.observe(el));
     return () => {
@@ -61,9 +61,8 @@ export default function Skills() {
         <p className="content-bd mb-8">
          Some computer skills that I am productive in, these include the programming languages, frameworks, ecosystems, softwares, technical skills that I have been working with.
         </p>
-        <div className="flex flex-col items-center gap-12 pt-2">
+        <div className="flex flex-row flex-wrap justify-center gap-12 pt-2">
           {skills.map((s, i) => {
-            const left = i % 2 === 0;
             return (
               <div
                 key={s.name}
@@ -71,32 +70,31 @@ export default function Skills() {
                   itemsRef.current[i] = el;
                 }}
                 data-index={i}
-                className={`skill-item flex flex-col items-center gap-4 ${
-                  left ? "md:-translate-x-24 md:-rotate-1" : "md:translate-x-24 md:rotate-1"
-                }`}
+                className="skill-row w-fit"
               >
-                <h3 className="skill-name" aria-label={s.name}>
-                  <span className="skill-name-text">{s.name.slice(0, typed[i])}</span>
-                </h3>
-                <ul className="flex flex-row flex-wrap justify-center gap-2">
-                  {s.tags.map((t, j) => {
-                    const tilt = (-(j - (s.tags.length - 1) / 2)) * 12 + (left ? -2 : 2);
-                    return (
-                      <li
-                        key={t}
-                        className="skill-tag"
-                        style={
-                          {
-                            "--tag-tilt": `${tilt}deg`,
-                            "--tag-delay": `${j * 90}ms`,
-                          } as CSSProperties
-                        }
-                      >
-                        {t}
-                      </li>
-                    );
-                  })}
-                </ul>
+                <div className="skill-item-shadow" aria-hidden="true" />
+                <div className="skill-item">
+                  <h3 className="skill-name" aria-label={s.name}>
+                    <span className="skill-name-text">{s.name.slice(0, typed[i])}</span>
+                  </h3>
+                  <ul className="flex flex-row flex-wrap justify-center gap-2">
+                    {s.tags.map((t, j) => {
+                      return (
+                        <li
+                          key={t}
+                          className="skill-tag"
+                          style={
+                            {
+                              "--tag-delay": `${j * 90}ms`,
+                            } as CSSProperties
+                          }
+                        >
+                          {t}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               </div>
             );
           })}

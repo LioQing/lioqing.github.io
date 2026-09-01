@@ -1,6 +1,6 @@
 [
   {
-    "title": "WGPU 3D Gaussian Splatting Viewer App",
+    "title": "WGPU 3D Gaussian Splatting Viewer",
     "tags": ["Rust", "Computer Graphics", "Web"],
     "year": 2025,
     "month": 1,
@@ -53,35 +53,6 @@
     ]
   },
   {
-    "title": "Code Shelf",
-    "tags": ["Python", "TypeScript", "Computer Graphics", "Web"],
-    "year": 2023,
-    "month": 8,
-    "subtitle": "Visualization Focused Tutorial Website",
-    "description": "A coding tutorial site I created for learning computer science concepts, with animations and interactive components for better learning experience.",
-    "image_url": "code-shelf.png",
-    "links": [
-      {
-        "label": "GitHub",
-        "url": "https://github.com/LioQing/code-shelf"
-      },
-      {
-        "label": "Website",
-        "url": "https://lioqing.com/code-shelf"
-      }
-    ]
-  },
-  {
-    "title": "Bro Well 兄井",
-    "tags": ["Illustrator", "Blender", "Graphic"],
-    "year": 2023,
-    "month": 3,
-    "subtitle": "Tribute to My Favorite Restaurant at Water Street in Hong Kong Island",
-    "description": "A popular restaurant around my secondary school, I frequently go there during my high school years. Unfortunately, it has closed down.",
-    "image_url": "bro-well.png",
-    "links": []
-  },
-  {
     "title": "HKU Timetable Viewer",
     "tags": ["TypeScript", "Web"],
     "year": 2022,
@@ -114,15 +85,5 @@
         "url": "https://github.com/LioQing/The-Tank-Arena"
       }
     ]
-  },
-  {
-    "title": "St. Paul's College Biology Society Logo",
-    "tags": ["Illustrator", "Graphic"],
-    "year": 2020,
-    "month": 10,
-    "subtitle": "The Biology Society Logo for My Secondary School",
-    "description": "I was not good at biology, but the lessons were very interesting and I really like it. I am also a part of the Biology Society committee.",
-    "image_url": "bio-soc.png",
-    "links": []
   }
 ]

@@ -17,7 +17,7 @@ export interface Skill {
 export interface Experience {
   name: string;
   organization: string;
-  filter: "work" | "education" | "community";
+  category: "work" | "education" | "community";
   start_year?: number;
   start_month?: number;
   end_year?: number;

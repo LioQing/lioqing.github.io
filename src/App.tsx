@@ -39,6 +39,18 @@ export default function App() {
           <Projects projects={projects} />
           <Skills />
           <Experiences experiences={experiences} />
+          <footer className="section-div">
+            <div className="section-bd py-8">
+              <p className="content-bd text-center text-sm text-content-muted">
+                &copy; {new Date().getFullYear()} Lio Qing
+              </p>
+            </div>
+          </footer>
+          <section aria-hidden="true" className="section-div">
+            <div className="section-hd">
+              <div className="section-striped h-48" />
+            </div>
+          </section>
           <ThemeToggle />
         </div>
       </ThemeProvider>

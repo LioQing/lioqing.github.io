@@ -55,7 +55,7 @@ export default function ProjectCard({
         <div className="flex flex-row py-1 px-2 w-full border-b border-border items-center">
           <div
             className={`w-[0.4em] h-[0.4em] rounded-full mr-1.5 transition-colors ${
-              expanded ? "bg-accent-green group-hover:bg-accent-green" : "bg-border group-hover:bg-content-muted"
+              expanded ? "bg-accent-contrast group-hover:bg-accent-contrast" : "bg-border group-hover:bg-content-muted"
             }`}
           />
           <pre className="text-border transition-all cursor-text group-hover:text-content-muted group-expanded:text-content-muted text-xs">
@@ -69,7 +69,7 @@ export default function ProjectCard({
                 {month} {p.year}
               </div>
 
-              <h3 className="font-bold text-2xl pb-4 cursor-text">{p.title}</h3>
+              <h3 className="font-black text-4xl pb-4 cursor-text">{p.title}</h3>
 
               <div className="mt-1 cursor-text">
                 {p.subtitle}
@@ -107,7 +107,10 @@ export default function ProjectCard({
               {p.links.length > 0 && (
                 <div className="flex flex-wrap gap-4">
                   {p.links.map((l) => (
-                    <div className="group/link-btn relative">
+                    <div
+                      key={l.label}
+                      className="group/link-btn relative"
+                    >
                       <div className="absolute inset-0 link-btn-shadow" />
                       <a
                         key={l.label}

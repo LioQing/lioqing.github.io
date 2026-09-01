@@ -1,7 +1,7 @@
 [
   {
     "name": "Rust",
-    "tags": ["WebAssembly", "Computer Graphics"]
+    "tags": ["WebAssembly", "WebGPU"]
   },
   {
     "name": "C#",
@@ -9,18 +9,18 @@
   },
   {
     "name": "Python",
-    "tags": ["AI", "Apache Spark"]
+    "tags": ["Artificial Intelligence", "Apache Spark"]
   },
   {
     "name": "Cloud",
-    "tags": ["AWS", "Azure"]
-  },
-  {
-    "name": "Graphics Design",
-    "tags": ["Photoshop", "Illustrator", "Affinity"]
+    "tags": ["Amazon Web Service", "Azure"]
   },
   {
     "name": "Blender",
     "tags": ["3D Modelling", "Keyframe Animation"]
+  },
+  {
+    "name": "Graphics",
+    "tags": ["Photoshop", "Illustrator", "Affinity"]
   }
 ]
