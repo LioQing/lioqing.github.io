@@ -9,6 +9,7 @@ import CursorFollower from "./components/CursorFollower";
 import type { Experience, Project } from "./types";
 import SectionTitle from "./components/SectionTitle";
 import SocialLinkButton from "./components/SocialLinkButton";
+import LioQing3D from "./data/lio-qing-3d.svg?react";
 
 const projects = projectsJson as Project[];
 const experiences = experiencesJson as Experience[];
@@ -21,6 +22,11 @@ export default function App() {
             aria-hidden
             className="pointer-events-none absolute inset-y-0 left-1/2 w-full max-w-section -translate-x-1/2 section-div border-x"
           />
+          <section aria-label="Lio Qing 3D illustration" className="section-div">
+            <div className="section-bd overflow-visible">
+              <LioQing3D aria-hidden className="lioqing-3d block h-auto w-fit" />
+            </div>
+          </section>
           <section id="lioqing" className="section-div">
             <SectionTitle id="lioqing">Lio Qing</SectionTitle>
             <div className="section-div" />
@@ -39,6 +45,7 @@ export default function App() {
           <Projects projects={projects} />
           <Skills />
           <Experiences experiences={experiences} />
+          <div className="h-px bg-border" />
           <footer className="section-div">
             <div className="section-bd py-8">
               <p className="content-bd text-center text-sm text-content-muted">

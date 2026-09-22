@@ -25,9 +25,9 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(NEXT[theme])}
-      className="fixed top-4 right-4 z-50 flex size-9 items-center justify-center rounded-full border border-neutral-300 bg-white text-base leading-none transition-colors hover:bg-neutral-100 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+      className="theme-toggle"
       aria-label={`Theme: ${LABELS[theme]}`}
-      title={`Theme: ${LABELS[theme]} — click for ${LABELS[NEXT[theme]]}`}
+      title={`Theme: ${LABELS[theme]} - click for ${LABELS[NEXT[theme]]}`}
     >
       {ICONS[theme]}
     </button>

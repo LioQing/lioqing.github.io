@@ -12,7 +12,7 @@ export default function Projects({ projects }: { projects: Project[] }) {
       <div className="section-div" />
       <div className="section-bd">
         <p className="content-bd mb-8">
-         A non-exhaustive list of software engineering projects I've done ever since I started learning programming in secondary school.
+         A non-exhaustive list of software engineering projects I've done ever since I started learning programming in secondary school. Click on the cards below to see more details on each one!
         </p>
         {projects.map((p, i) => (
           <ProjectCard

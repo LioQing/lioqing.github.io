@@ -1,5 +1,28 @@
 [
   {
+    "title": "LLM Extension for Command Palette",
+    "tags": ["C#", "Artificial Intelligence"],
+    "year": 2025,
+    "month": 5,
+    "subtitle": "An extension for PowerToys Command Palette allowing user to chat with an LLM",
+    "description": "This was originally just a small idea I had when I was revising for exam, I wondered what if I can ask LLM simple questions without having to worry about opening yet another window on my desktop. I posted this small project online, and it gained some interests, so I released this for others to use.",
+    "image_url": "llm-extension-for-cmd-pal.png",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/lioqing/llm-extension-for-cmd-pal"
+      },
+      {
+        "label": "Website",
+        "url": "https://lioqing.com/llm-extension-for-cmd-pal"
+      },
+      {
+        "label": "Microsoft Store",
+        "url": "https://apps.microsoft.com/detail/9npk6ksdlc81"
+      }
+    ]
+  },
+  {
     "title": "WGPU 3D Gaussian Splatting Viewer",
     "tags": ["Rust", "Computer Graphics", "Web"],
     "year": 2025,
@@ -28,7 +51,7 @@
     "year": 2024,
     "month": 11,
     "subtitle": "A Project I Built to Teach Reinforcement Learning at My Secondary School",
-    "description": "This is a project I made to teach reinforcement learning to students from my secondary school. It is built on top of my previous project Race AI, with a more user-friendly interface and more features.",
+    "description": "This is a project I made to teach reinforcement learning to students from my secondary school. It is built on top of my previous project Race AI, with a more user-friendly interface and more features. It emphasizes on the visualization of neural network and RL, helping students understand the process with real-time visuals.",
     "image_url": "simple-rl-driver.png",
     "links": [
       {

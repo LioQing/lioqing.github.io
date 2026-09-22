@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import SectionTitle from "./SectionTitle";
 import type { Experience } from "../types";
@@ -40,11 +40,46 @@ function itemSortKey(e: Experience): [number, number] {
   return [y, m];
 }
 
-/**
- * Wraps a group (heading + entries) with a one-time reveal transition.
- * When the group scrolls into view, the accent line grows top-to-bottom
- * while the entries reveal in sync (staggered top-to-bottom).
- */
+/** Reveals each entry independently as it enters the viewport. */
+function RevealEntry({ header = false, className = "", children }: {
+  header?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  const entryRef = useRef<HTMLDivElement>(null);
+  const [shown, setShown] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = entryRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShown(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0, rootMargin: "0px 0px -32px 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={entryRef} className={`relative flow-root ${className}`}>
+      {header ? null : <div
+        aria-hidden
+        className={`experiences-reveal-bar ${shown ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"}`}
+      />}
+      <div
+        className={`experiences-reveal-content ${shown ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function RevealGroup({
   header,
   items,
@@ -54,52 +89,16 @@ function RevealGroup({
   items: Experience[];
   renderItem: (item: Experience, index: number) => ReactNode;
 }) {
-  const groupRef = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
-
-  useEffect(() => {
-    const el = groupRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setShown(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.2, rootMargin: "0px 0px -10% 0px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
   return (
-    <div ref={groupRef} className="relative mb-5 pl-8">
-      <div
-        aria-hidden
-        className="bg-accent absolute top-0 bottom-0 left-0 w-0.5"
-        style={{
-          transform: shown ? "scaleY(1)" : "scaleY(0)",
-          transformOrigin: "top",
-          transition: "transform 700ms cubic-bezier(0.4, 0, 0.2, 1)",
-        }}
-      />
-      {header}
-      {items.map((item, i) => (
-        <div
-          key={`${item.name}-${item.organization}-${i}`}
-          className="will-change-transform mb-3 py-3.5"
-          style={{
-            opacity: shown ? 1 : 0,
-            transform: shown ? "translateY(0)" : "translateY(16px)",
-            transition:
-              "opacity 500ms ease, transform 500ms cubic-bezier(0.4, 0, 0.2, 1)",
-            transitionDelay: `${i * 120}ms`,
-          }}
-        >
-          {renderItem(item, i)}
-        </div>
-      ))}
+    <div className="relative mb-5">
+      <RevealEntry header>{header}</RevealEntry>
+      <div className="mb-8 pl-8">
+        {items.map((item, i) => (
+          <RevealEntry key={`${item.name}-${item.organization}-${i}`} className="mb-1.5 py-3.5">
+            {renderItem(item, i)}
+          </RevealEntry>
+        ))}
+      </div>
     </div>
   );
 }
