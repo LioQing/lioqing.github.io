@@ -16,6 +16,12 @@
 }
 
 @layer components {
+  .dot-grid {
+    background-image: radial-gradient(circle, var(--color-border) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: -12px -12px;
+    opacity: 0.15;
+  }
   .theme-toggle {
     @apply border-border hover:bg-bg hover:border-border-active fixed top-4 right-4 z-50 flex size-9 cursor-pointer items-center justify-center rounded-full border text-base leading-none backdrop-blur-xs transition-colors;
   }
@@ -172,4 +178,14 @@
   --color-accent: var(--color-accent-red);
   --color-accent-contrast: var(--color-accent-green);
   --color-3d-border: var(--color-3d-border-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -36,6 +36,7 @@ export default function SectionTitle({
           </svg>
           <h2 className="section-title">{children}</h2>
           <div
+            aria-hidden="true"
             className="absolute inset-0 -z-10"
             style={{
               maskImage: `url(#${maskId})`,

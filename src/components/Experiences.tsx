@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import SectionTitle from "./SectionTitle";
 import type { Experience } from "../types";
+import useReducedMotion from "../hooks/useReducedMotion";
 
 function fmtDate(y: number, m: number) {
   return `${y}-${String(m).padStart(2, "0")}`;
@@ -48,10 +49,15 @@ function RevealEntry({ header = false, className = "", children }: {
 }) {
   const entryRef = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const visible = shown || reducedMotion;
 
   useLayoutEffect(() => {
+    if (reducedMotion) return;
+
     const el = entryRef.current;
     if (!el) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
@@ -62,17 +68,18 @@ function RevealEntry({ header = false, className = "", children }: {
       { threshold: 0, rootMargin: "0px 0px -32px 0px" },
     );
     observer.observe(el);
+
     return () => observer.disconnect();
-  }, []);
+  }, [reducedMotion]);
 
   return (
     <div ref={entryRef} className={`relative flow-root ${className}`}>
       {header ? null : <div
         aria-hidden
-        className={`experiences-reveal-bar ${shown ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"}`}
+        className={`experiences-reveal-bar ${visible ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"}`}
       />}
       <div
-        className={`experiences-reveal-content ${shown ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
+        className={`experiences-reveal-content ${visible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
       >
         {children}
       </div>
@@ -108,7 +115,7 @@ export default function Experiences({ experiences }: { experiences: Experience[]
 
   const groupRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [indicator, setIndicator] = useState({ x: 0, w: 0 });
+  const [indicator, setIndicator] = useState({ x: 0, y: 0, w: 0, h: 0 });
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -117,12 +124,24 @@ export default function Experiences({ experiences }: { experiences: Experience[]
       if (!group || !item) return;
       const groupRect = group.getBoundingClientRect();
       const itemRect = item.getBoundingClientRect();
-      setIndicator({ x: itemRect.left - groupRect.left, w: itemRect.width });
+      setIndicator({
+        x: itemRect.left - groupRect.left,
+        y: itemRect.top - groupRect.top,
+        w: itemRect.width,
+        h: itemRect.height,
+      });
     };
     measure();
+  
     const ro = new ResizeObserver(measure);
     if (groupRef.current) ro.observe(groupRef.current);
+
+    Object.values(itemRefs.current).forEach((item) => {
+      if (item) ro.observe(item);
+    });
+
     window.addEventListener("resize", measure);
+
     return () => {
       ro.disconnect();
       window.removeEventListener("resize", measure);
@@ -133,6 +152,7 @@ export default function Experiences({ experiences }: { experiences: Experience[]
     if (groupBy === "category") return e.category;
     const year =
       groupBy === "start" ? (e.start_year ?? e.end_year) : (e.end_year ?? e.start_year);
+
     return String(year);
   };
 
@@ -140,6 +160,7 @@ export default function Experiences({ experiences }: { experiences: Experience[]
   for (const e of experiences) {
     const key = keyOf(e);
     if (!groups.has(key)) groups.set(key, []);
+
     groups.get(key)!.push(e);
   }
 
@@ -165,11 +186,11 @@ export default function Experiences({ experiences }: { experiences: Experience[]
         </p>
         <div
           ref={groupRef}
-          className="relative mb-6 flex flex-row gap-4"
+          className="relative mb-6 flex flex-row flex-wrap items-center gap-4"
           role="group"
           aria-label="Group experiences by"
         >
-          Group by:
+          <span className="w-full sm:w-auto">Group by:</span>
           {OPTIONS.map((o) => {
             const active = groupBy === o.value;
             return (
@@ -194,10 +215,11 @@ export default function Experiences({ experiences }: { experiences: Experience[]
           })}
           <div
             aria-hidden
-            className="pointer-events-none absolute top-0 bottom-0 left-0 transition-all ease-in-out"
+            className="pointer-events-none absolute top-0 left-0 transition-all ease-in-out"
             style={{
-              transform: `translateX(${indicator.x}px)`,
+              transform: `translate(${indicator.x}px, ${indicator.y}px)`,
               width: `${indicator.w}px`,
+              height: `${indicator.h}px`,
             }}
           >
             <span className="experiences-toggle-corner -top-1.5 -left-1.5 border-t border-l" />

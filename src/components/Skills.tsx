@@ -2,26 +2,39 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import SectionTitle from "./SectionTitle";
 import skillsJson from "../data/skills.json";
 import type { Skill } from "../types";
+import useReducedMotion from "../hooks/useReducedMotion";
 
 const skills = skillsJson as Skill[];
 const TYPING_STEP_MS = 100;
 
 export default function Skills() {
+  const reducedMotion = useReducedMotion();
   const [typed, setTyped] = useState<number[]>(() => skills.map(() => 0));
   const itemsRef = useRef<(HTMLDivElement | null)[]>([]);
   const countsRef = useRef<number[]>(skills.map(() => 0));
   const timersRef = useRef<Record<number, ReturnType<typeof setInterval>>>({});
 
   useEffect(() => {
+    if (reducedMotion) return;
+
     const items = itemsRef.current.filter(Boolean) as HTMLDivElement[];
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
+
           const el = entry.target as HTMLDivElement;
           const i = Number(el.dataset.index);
+
           observer.unobserve(el);
+
           if (timersRef.current[i] != null) return;
+
+          if (countsRef.current[i] >= skills[i].name.length) {
+            el.classList.add("typing-done");
+            return;
+          }
 
           el.classList.add("is-typing");
           timersRef.current[i] = setInterval(() => {
@@ -44,14 +57,16 @@ export default function Skills() {
       },
       { threshold: 0.5, rootMargin: "0px 0px 0px 0px" }
     );
+
     items.forEach((el) => observer.observe(el));
+
     return () => {
       observer.disconnect();
       Object.values(timersRef.current).forEach((t) => clearInterval(t));
       timersRef.current = {};
-      countsRef.current = skills.map(() => 0);
+      items.forEach((el) => el.classList.remove("is-typing"));
     };
-  }, []);
+  }, [reducedMotion]);
 
   return (
     <section id="skills" className="section-div">
@@ -70,12 +85,12 @@ export default function Skills() {
                   itemsRef.current[i] = el;
                 }}
                 data-index={i}
-                className="skill-row w-fit"
+                className={`skill-row w-fit ${reducedMotion ? "typing-done" : ""}`}
               >
                 <div className="skill-item-shadow" aria-hidden="true" />
                 <div className="skill-item">
                   <h3 className="skill-name" aria-label={s.name}>
-                    <span className="skill-name-text">{s.name.slice(0, typed[i])}</span>
+                    <span className="skill-name-text">{reducedMotion ? s.name : s.name.slice(0, typed[i])}</span>
                   </h3>
                   <ul className="flex flex-row flex-wrap justify-center gap-2">
                     {s.tags.map((t, j) => {

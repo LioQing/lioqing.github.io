@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import useReducedMotion from "../hooks/useReducedMotion";
 
 // Follower parameter.
 const SPRING = 40;
@@ -27,8 +28,10 @@ type Dot = { cx: number; cy: number; r: number; a: number };
 
 export default function CursorFollower() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -220,7 +223,11 @@ export default function CursorFollower() {
       document.removeEventListener("pointerenter", onEnter);
       window.removeEventListener("resize", layout);
     };
-  }, []);
+  }, [reducedMotion]);
+
+  if (reducedMotion) {
+    return <div aria-hidden="true" className="dot-grid pointer-events-none fixed inset-0 -z-20" />;
+  }
 
   return (
     <canvas

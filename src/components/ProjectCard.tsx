@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { Project } from "../types";
 import ExternalLinkIcon from "../data/ext-lnk.svg?react";
 
@@ -26,30 +27,19 @@ export default function ProjectCard({
   onToggle: () => void;
 }) {
   const month = MONTHS[p.month - 1] ?? p.month;
+  const detailsId = useId();
 
   return (
     <div className={`group relative ${expanded ? "group-expanded" : ""}`}>
       <div className="project-card-shadow" />
       <article
         className="project-card overflow-hidden mb-8 flex flex-col gap-8 py-0 pb-8"
-        aria-expanded={expanded}
         onClick={() => {
           const selection = window.getSelection();
           if (selection && selection.toString().trim().length > 0) {
             return;
           }
           onToggle();
-        }}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.target !== e.currentTarget) {
-            return;
-          }
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onToggle();
-          }
         }}
       >
         <div className="flex flex-row py-1 px-2 w-full border-b border-border items-center">
@@ -69,7 +59,20 @@ export default function ProjectCard({
                 {month} {p.year}
               </div>
 
-              <h3 className="font-black text-4xl pb-4 cursor-text">{p.title}</h3>
+              <h3 className="font-black text-4xl pb-4">
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={detailsId}
+                  className="cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-4"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle();
+                  }}
+                >
+                  {p.title}
+                </button>
+              </h3>
 
               <div className="mt-1 cursor-text">
                 {p.subtitle}
@@ -95,6 +98,9 @@ export default function ProjectCard({
           </div>
 
           <div
+            id={detailsId}
+            inert={!expanded}
+            aria-hidden={!expanded}
             className={`grid transition-[grid-template-rows] duration-300 ${
               expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
             }`}
