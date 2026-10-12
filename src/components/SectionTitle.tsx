@@ -2,16 +2,19 @@ export default function SectionTitle({
   children,
   id,
 }: {
-  /** Name of the section, section ID should be the lower case and space removed of this */
+  /** Display name of the section */
   children: string;
-  /** Unique id for the SVG mask, one per section title */
+  /** Section anchor ID, also used for the unique SVG mask */
   id: string;
 }) {
   const maskId = `${id}-mask`;
   return (
-    <a href={`#${children.toLowerCase().replaceAll(' ', '')}`} className="group">
+    <a href={`#${id}`} className="group">
       <div className="section-hd">
-        <div className="section-striped" style={{ '--section-mask': `url(#${maskId})` } as React.CSSProperties}>
+        <div
+          className="section-striped"
+          style={{ "--section-mask": `url(#${maskId})` } as React.CSSProperties}
+        >
           <svg
             className="pointer-events-none absolute inset-0"
             width="100%"
@@ -32,16 +35,12 @@ export default function SectionTitle({
                   {children}
                 </text>
               </mask>
-            </defs> 
+            </defs>
           </svg>
           <h2 className="section-title">{children}</h2>
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-10"
-            style={{
-              maskImage: `url(#${maskId})`,
-              WebkitMaskImage: `url(#${maskId})`,
-            }}
+            className="absolute inset-0 -z-10 mask-(--section-mask) [-webkit-mask-image:var(--section-mask)]"
           >
             <h2 className="section-title-shadow-contrast">{children}</h2>
             <h2 className="section-title-shadow">{children}</h2>

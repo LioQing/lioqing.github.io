@@ -5,8 +5,14 @@
 @import "tailwindcss";
 
 @layer base {
+  html {
+    @apply scroll-smooth;
+  }
   body {
     @apply bg-bg transition-colors duration-300;
+  }
+  section[id] {
+    @apply scroll-mt-24;
   }
 }
 
@@ -17,13 +23,104 @@
 
 @layer components {
   .dot-grid {
-    background-image: radial-gradient(circle, var(--color-border) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-position: -12px -12px;
-    opacity: 0.15;
+    @apply bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1px)] bg-size-[24px_24px] bg-position-[-12px_-12px] opacity-30;
+  }
+  .floating-nav {
+    @apply border-border-active bg-bg/82 text-content-fg top-floating-nav-inset fixed left-4 z-50 grid w-[calc(100%-2rem)] grid-cols-[minmax(0,1fr)_auto] gap-x-2 overflow-hidden border p-2 text-sm leading-6 backdrop-blur-md [grid-template-areas:'home_controls'_'sections_sections'] [transition:top_400ms_cubic-bezier(0.22,1,0.36,1),right_400ms_cubic-bezier(0.22,1,0.36,1),width_400ms_cubic-bezier(0.22,1,0.36,1),height_400ms_cubic-bezier(0.22,1,0.36,1),background-color_300ms,border-color_300ms];
+  }
+  .floating-nav-home {
+    @apply hover:pointer-fine:text-content-muted flex min-h-11 cursor-pointer items-center px-3 font-semibold whitespace-nowrap transition-colors [grid-area:home];
+  }
+  .floating-nav-controls {
+    @apply flex items-center gap-1 [grid-area:controls];
+  }
+  .floating-nav-toggle,
+  .theme-toggle {
+    @apply text-content-muted hover:pointer-fine:border-border-active hover:pointer-fine:bg-bg/90 hover:pointer-fine:text-content-fg flex h-11 cursor-pointer items-center justify-center gap-2 border border-transparent px-2 transition-colors;
+  }
+  .floating-nav-toggle svg,
+  .theme-toggle svg {
+    @apply size-5 shrink-0 stroke-current stroke-[1.5] [stroke-linecap:round] [stroke-linejoin:round];
+  }
+  .floating-nav-toggle svg {
+    @apply transition-transform duration-220 ease-[ease];
+  }
+  .floating-nav[data-expanded="true"] .floating-nav-toggle svg {
+    @apply rotate-180;
   }
   .theme-toggle {
-    @apply border-border hover:bg-bg hover:border-border-active fixed top-4 right-4 z-50 flex size-9 cursor-pointer items-center justify-center rounded-full border text-base leading-none backdrop-blur-xs transition-colors;
+    @apply w-11;
+  }
+  .theme-toggle-label {
+    @apply hidden;
+  }
+  .floating-nav-sections {
+    @apply invisible grid grid-rows-[0fr] opacity-0 [grid-area:sections] [transition:grid-template-rows_220ms_ease,opacity_220ms_ease,visibility_220ms];
+  }
+  .floating-nav[data-expanded="true"] .floating-nav-sections {
+    @apply visible grid-rows-[1fr] opacity-100;
+  }
+  .floating-nav-sections-inner {
+    @apply min-h-0 overflow-hidden;
+  }
+  .floating-nav-links {
+    @apply border-border mt-2 flex max-h-[calc(100dvh-7rem)] scrollbar-none flex-col gap-1 overflow-x-hidden overflow-y-auto border-t pt-2 [&::-webkit-scrollbar]:hidden;
+  }
+  .floating-nav-link {
+    @apply text-content-muted hover:pointer-fine:border-border-active hover:pointer-fine:bg-bg/90 hover:pointer-fine:text-content-fg relative flex min-h-11 items-center border border-transparent px-3 whitespace-nowrap transition-colors;
+  }
+  .floating-nav-link[aria-current="location"] {
+    @apply border-border bg-bg/90 text-content-fg;
+  }
+  .floating-nav-link::before {
+    @apply bg-accent absolute inset-y-3 -left-px w-0.5 opacity-0 transition-opacity content-[''];
+  }
+  .floating-nav-link[aria-current="location"]::before {
+    @apply opacity-100;
+  }
+  .floating-nav :is(a, button):focus-visible {
+    @apply outline-accent-contrast outline-2 -outline-offset-3;
+  }
+  @variant xl {
+    .floating-nav {
+      @apply h-floating-nav-bar-height right-[calc((100%-50rem)/2)] left-auto w-200 grid-cols-[auto_minmax(0,1fr)_auto] [grid-template-areas:'home_sections_controls'];
+    }
+    .floating-nav-toggle {
+      @apply hidden;
+    }
+    .floating-nav-sections {
+      @apply visible grid-rows-[1fr] self-center opacity-100;
+    }
+    .floating-nav-links {
+      @apply m-0 flex-row justify-center border-0 p-0;
+    }
+    .floating-nav[data-scrolled="true"] {
+      @apply top-floating-nav-sidebar-inset w-floating-nav-sidebar-width right-[max(var(--spacing-floating-nav-sidebar-gap),calc((100%-var(--container-section))/2-var(--spacing-floating-nav-sidebar-width)-var(--spacing-floating-nav-sidebar-gap)))] h-80 max-h-[calc(100dvh-var(--spacing-floating-nav-sidebar-inset)*2)] grid-cols-1 grid-rows-[2.75rem_minmax(0,1fr)_3.3125rem] gap-y-2 [grid-template-areas:'home'_'sections'_'controls'];
+    }
+    .floating-nav[data-scrolled="true"] .floating-nav-home {
+      @apply border-border border-b px-2;
+    }
+    .floating-nav[data-scrolled="true"] .floating-nav-links {
+      @apply h-full max-h-full flex-col;
+    }
+    .floating-nav[data-scrolled="true"] .floating-nav-sections {
+      @apply min-h-0 self-stretch;
+    }
+    .floating-nav[data-scrolled="true"] .floating-nav-link {
+      @apply px-2;
+    }
+    .floating-nav[data-scrolled="true"] .floating-nav-controls {
+      @apply border-border border-t pt-2;
+    }
+    .floating-nav[data-scrolled="true"] .theme-toggle {
+      @apply w-full justify-start;
+    }
+    .floating-nav[data-scrolled="true"] .theme-toggle-label {
+      @apply inline;
+    }
+  }
+  .hero-section {
+    @apply pt-[calc(var(--spacing-floating-nav-inset)+var(--spacing-floating-nav-bar-height))];
   }
   .lioqing-3d path {
     @apply transition-[fill,stroke];
@@ -116,6 +213,18 @@
   --font-lio: "Lio Font", sans-serif;
   --color-accent-green: #24fb61;
   --color-accent-red: #fb5264;
+  --spacing-floating-nav-inset: max(1rem, env(safe-area-inset-top));
+  --spacing-floating-nav-bar-height: 3.875rem;
+  --spacing-floating-nav-sidebar-gap: 1.5rem;
+  --spacing-floating-nav-sidebar-inset: max(
+    var(--spacing-floating-nav-inset),
+    var(--spacing-floating-nav-sidebar-gap)
+  );
+  --spacing-floating-nav-sidebar-width: clamp(
+    8rem,
+    calc((100vw - var(--container-section)) / 2 - var(--spacing-floating-nav-sidebar-gap) * 2),
+    11rem
+  );
 
   /* Themed variables */
   --container-section: var(--container-5xl);
@@ -151,19 +260,19 @@
     transparent 12px,
     var(--color-accent-red) 12.2px
   );
-  --color-bg: var(--color-neutral-100);
+  --color-bg: var(--color-stone-100);
   --color-bg-dark: var(--color-neutral-900);
-  --color-border: var(--color-neutral-400);
+  --color-border: var(--color-stone-400);
   --color-border-dark: var(--color-neutral-700);
-  --color-border-active: var(--color-neutral-600);
+  --color-border-active: var(--color-stone-600);
   --color-border-active-dark: var(--color-neutral-600);
-  --color-content-fg: var(--color-black);
+  --color-content-fg: var(--color-stone-800);
   --color-content-fg-dark: var(--color-white);
-  --color-content-muted: var(--color-neutral-600);
+  --color-content-muted: var(--color-stone-600);
   --color-content-muted-dark: var(--color-neutral-400);
   --color-accent: var(--color-accent-green);
   --color-accent-contrast: var(--color-accent-red);
-  --color-3d-border: var(--color-neutral-600);
+  --color-3d-border: var(--color-stone-600);
   --color-3d-border-dark: var(--color-neutral-50);
 }
 

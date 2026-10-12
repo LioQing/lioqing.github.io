@@ -7,6 +7,8 @@
     "subtitle": "An extension for PowerToys Command Palette allowing user to chat with an LLM",
     "description": "This was originally just a small idea I had when I was revising for exam, I wondered what if I can ask LLM simple questions without having to worry about opening yet another window on my desktop. I posted this small project online, and it gained some interests, so I released this for others to use.",
     "image_url": "llm-extension-for-cmd-pal.png",
+    "image_width": 1717,
+    "image_height": 959,
     "links": [
       {
         "label": "GitHub",
@@ -30,6 +32,8 @@
     "subtitle": "3D Gaussian Splatting Viewer made in WGPU as Part of My Research Work at HKU",
     "description": "I made this viewer for my work as a student research assistant at Innovation Wing of the University of Hong Kong. It is built with WGPU, a Rust library for WebGPU, and is used to visualize and edit 3D Gaussian Splatting - a cutting edge 3D reconstruction technique.",
     "image_url": "wgpu-3dgs-viewer-app.png",
+    "image_width": 1920,
+    "image_height": 1080,
     "links": [
       {
         "label": "GitHub",
@@ -53,6 +57,8 @@
     "subtitle": "A Project I Built to Teach Reinforcement Learning at My Secondary School",
     "description": "This is a project I made to teach reinforcement learning to students from my secondary school. It is built on top of my previous project Race AI, with a more user-friendly interface and more features. It emphasizes on the visualization of neural network and RL, helping students understand the process with real-time visuals.",
     "image_url": "simple-rl-driver.png",
+    "image_width": 1920,
+    "image_height": 1080,
     "links": [
       {
         "label": "GitHub",
@@ -68,6 +74,8 @@
     "subtitle": "A Game with Large Language Model Driven Non-Player Characters for My Student Interest Group at HKU",
     "description": "This is a game I made when I was the leader of the GenNarrator AI student interest group at the University of Hong Kong. Players talk with non-player characters driven by large language models in real-time to solve puzzles and progress in the game.",
     "image_url": "talk-your-way-out.png",
+    "image_width": 1920,
+    "image_height": 1080,
     "links": [
       {
         "label": "InnoWing",
@@ -83,6 +91,8 @@
     "subtitle": "A Timetable Viewer for University of Hong Kong Students",
     "description": "Back then, the university did not have a timetable planner/viewer, so I made one. It was a great help for me and my schoolmates, but now the university has its own so it is much less used.",
     "image_url": "hku-timetable-viewer.png",
+    "image_width": 1379,
+    "image_height": 848,
     "links": [
       {
         "label": "GitHub",
@@ -102,6 +112,8 @@
     "subtitle": "A Tank Game Built with Custom Framework, One of My First Programming Projects",
     "description": "A game built in a custom game engine with an architecture optimized for data intensive calculation. Implement all components including AI, level, physics from scratch with a single graphics library SFML. It is one of my first major programming project.",
     "image_url": "the-tank-arena.png",
+    "image_width": 598,
+    "image_height": 366,
     "links": [
       {
         "label": "GitHub",
