@@ -42,6 +42,7 @@ export default function App() {
                 LinkedIn
               </SocialLinkButton>
               <SocialLinkButton url="https://github.com/lioqing">GitHub</SocialLinkButton>
+              <SocialLinkButton url="https://lioqing.com/blogs/">Blogs</SocialLinkButton>
             </div>
           </div>
         </section>
