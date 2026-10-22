@@ -7,6 +7,7 @@ const SECTIONS = [
   { id: "projects", label: "Projects" },
   { id: "skills", label: "Skills" },
   { id: "experiences", label: "Experiences" },
+  { id: "explore", label: "Explore" },
 ];
 
 function subscribeDesktop(onChange: () => void) {

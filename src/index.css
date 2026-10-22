@@ -95,7 +95,7 @@
       @apply m-0 flex-row justify-center border-0 p-0;
     }
     .floating-nav[data-scrolled="true"] {
-      @apply top-floating-nav-sidebar-inset w-floating-nav-sidebar-width right-[max(var(--spacing-floating-nav-sidebar-gap),calc((100%-var(--container-section))/2-var(--spacing-floating-nav-sidebar-width)-var(--spacing-floating-nav-sidebar-gap)))] h-80 max-h-[calc(100dvh-var(--spacing-floating-nav-sidebar-inset)*2)] grid-cols-1 grid-rows-[2.75rem_minmax(0,1fr)_3.3125rem] gap-y-2 [grid-template-areas:'home'_'sections'_'controls'];
+      @apply top-floating-nav-sidebar-inset w-floating-nav-sidebar-width right-[max(var(--spacing-floating-nav-sidebar-gap),calc((100%-var(--container-section))/2-var(--spacing-floating-nav-sidebar-width)-var(--spacing-floating-nav-sidebar-gap)))] h-92 max-h-[calc(100dvh-var(--spacing-floating-nav-sidebar-inset)*2)] grid-cols-1 grid-rows-[2.75rem_minmax(0,1fr)_3.3125rem] gap-y-2 [grid-template-areas:'home'_'sections'_'controls'];
     }
     .floating-nav[data-scrolled="true"] .floating-nav-home {
       @apply border-border border-b px-2;
@@ -144,7 +144,7 @@
     @apply border-border border-b;
   }
   .section-bd {
-    @apply max-w-section mx-auto px-12 pt-8 pb-12;
+    @apply max-w-section mx-auto px-6 pt-8 pb-12 sm:px-12;
   }
   .tag {
     @apply border-content-muted text-content-muted rounded-full border px-2 py-0.5 text-sm;
@@ -154,6 +154,9 @@
   }
   .link-btn-shadow {
     @apply border-accent bg-striped-accent border;
+  }
+  .explore-link {
+    @apply border-border bg-bg text-content-fg relative block fill-current border p-5 transition-[translate,border-color] duration-200 sm:p-8 hover:pointer-fine:border-border-active hover:pointer-fine:-translate-x-1.5 hover:pointer-fine:-translate-y-1.5 focus-visible:border-border-active focus-visible:-translate-x-1.5 focus-visible:-translate-y-1.5 focus-visible:outline-accent-contrast focus-visible:outline-2 focus-visible:outline-offset-4 active:-translate-x-1.5 active:-translate-y-1.5;
   }
   .project-card {
     @apply border-border group-hover:border-border-active group-expanded:border-border-active group-expanded:-top-2 group-expanded:right-2 group-expanded:bottom-2 group-expanded:-left-2 group-expanded:backdrop-blur-xs relative inset-0 -top-px -right-px -bottom-px -left-px cursor-pointer border transition-all group-hover:-top-2 group-hover:right-2 group-hover:bottom-2 group-hover:-left-2 group-hover:backdrop-blur-xs;

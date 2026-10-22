@@ -177,10 +177,10 @@ export default function Experiences({ experiences }: { experiences: Experience[]
       : key;
 
   return (
-    <section id="experiences">
+    <section id="experiences" className="section-div">
       <SectionTitle id="experiences">Experiences</SectionTitle>
       <div className="section-div" />
-      <div className="section-bd pb-24">
+      <div className="section-bd">
         <p className="content-bd mb-8">
           My professional and educational experiences, as well as my contributions to the community. I have been fortunate to work with some amazing organizations and people, and I am grateful for the opportunities I have had to learn and grow.
         </p>

@@ -1,0 +1,22 @@
+[
+  {
+    "title": "My AI Agent Configurations",
+    "icon": "square-sparkles",
+    "url": "https://github.com/LioQing/.agents"
+  },
+  {
+    "title": "My Vibe-Coded Projects",
+    "icon": "sparkle",
+    "url": "https://github.com/search?q=owner%3ALioQing+topic%3Avibe-coded&type=repositories&s=updated&o=desc"
+  },
+  {
+    "title": "My University Courseworks",
+    "icon": "graduation-cap",
+    "url": "https://github.com/search?q=owner%3ALioQing+topic%3Auniversity-coursework&type=repositories&s=updated&o=desc"
+  },
+  {
+    "title": "My HKDSE Notes",
+    "icon": "notebook-pen",
+    "url": "https://github.com/search?q=owner%3ALioQing+topic%3Ahkdse&type=repositories&s=updated&o=desc"
+  }
+]

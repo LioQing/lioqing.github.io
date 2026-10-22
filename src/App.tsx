@@ -5,6 +5,7 @@ import projectsJson from "./data/projects.json";
 import Experiences from "./components/Experiences";
 import Projects from "./components/Projects";
 import Skills from "./components/Skills";
+import Explore from "./components/Explore";
 import CursorFollower from "./components/CursorFollower";
 import type { Experience, Project } from "./types";
 import SectionTitle from "./components/SectionTitle";
@@ -37,7 +38,7 @@ export default function App() {
               Desk, and am interested in web technology, computer graphics, AI, and in general enjoy
               building tools that help people learn and create.
             </p>
-            <div className="mt-8 flex flex-row gap-4">
+            <div className="mt-8 flex flex-row flex-wrap gap-4">
               <SocialLinkButton url="https://www.linkedin.com/in/lioqyz/">
                 LinkedIn
               </SocialLinkButton>
@@ -50,7 +51,7 @@ export default function App() {
         <Projects projects={projects} />
         <Skills />
         <Experiences experiences={experiences} />
-        <div className="bg-border h-px" />
+        <Explore />
         <footer className="section-div">
           <div className="section-bd py-8">
             <p className="content-bd text-content-muted text-center text-sm">
